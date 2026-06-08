@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── USER (DUKAANDAAR) ───
+model User {
+  id        String   @id @default(cuid())
+  name      String   
+  phone     String   @unique 
+  password  String   
+  shopName  String   
+  shopType  String   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Ek dukaandaar ke paas apna alag data hoga
+  customers Customer[]
+  products  Product[]
+  orders    Order[]
+  suppliers Supplier[]
+  purchases Purchase[]
+}
+
+// ─── CUSTOMER ───
+model Customer {
+  id        String    @id @default(cuid())
+  userId    String    // <-- HAR TABLE MEIN YEH ADD HOGA
+  user      User      @relation(fields: [userId], references: [id])
+  
+  name      String    
+  mobile    String?   
+  village   String?   
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  orders    Order[]   
+  payments  Payment[]
+}
+
+// ─── PRODUCT ───
+model Product {
+  id            String         @id @default(cuid())
+  userId        String         // <-- ISOLATION TAG
+  user          User           @relation(fields: [userId], references: [id])
+  
+  name          String   
+  category      String   
+  brand         String?  
+  stockQty      Float    
+  unit          String   
+  buyPrice      Float    
+  sellPrice     Float    
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  orderItems    OrderItem[] 
+  purchaseItems PurchaseItem[]
+}
+
+// ─── ORDER (SALE BILL) ───
+model Order {
+  id          String      @id @default(cuid())
+  userId      String      // <-- ISOLATION TAG
+  user        User        @relation(fields: [userId], references: [id])
+  
+  customerId  String?  
+  customer    Customer?   @relation(fields: [customerId], references: [id]) 
+  totalAmount Float    
+  paidAmount  Float    
+  status      String      
+  items       OrderItem[] 
+  createdAt   DateTime    @default(now()) 
+  updatedAt   DateTime    @updatedAt
+}
+
+// ─── SUPPLIER ───
+model Supplier {
+  id        String            @id @default(uuid())
+  userId    String            // <-- ISOLATION TAG
+  user      User              @relation(fields: [userId], references: [id])
+  
+  name      String            
+  company   String?           
+  mobile    String
+  address   String?
+  createdAt DateTime          @default(now())
+  purchases Purchase[]        
+  payments  SupplierPayment[] 
+}
+
+// ─── PURCHASE (INWARD STOCK) ───
+model Purchase {
+  id          String         @id @default(uuid())
+  userId      String         // <-- ISOLATION TAG
+  user        User           @relation(fields: [userId], references: [id])
+  
+  supplierId  String
+  supplier    Supplier       @relation(fields: [supplierId], references: [id])
+  totalAmount Float          
+  paidAmount  Float          
+  status      String         
+  billNumber  String?        
+  createdAt   DateTime       @default(now())
+  items       PurchaseItem[]
+}
+
+// ─── ITEMS & PAYMENTS (INKO DIRECT PARENT SE LINK KARTE HAIN) ───
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String   
+  order       Order    @relation(fields: [orderId], references: [id]) 
+  productId   String   
+  product     Product  @relation(fields: [productId], references: [id]) 
+  qty         Float    
+  priceAtSale Float    
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  amount      Float    
+  createdAt   DateTime @default(now()) 
+}
+
+model SupplierPayment {
+  id          String   @id @default(uuid())
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  amount      Float    
+  createdAt   DateTime @default(now())
+}
+
+model PurchaseItem {
+  id          String   @id @default(cuid())
+  purchaseId  String
+  productId   String
+  qty         Int
+  buyPrice    Float
+  purchase    Purchase @relation(fields: [purchaseId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id])
+}
