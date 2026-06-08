@@ -24,27 +24,12 @@
 //   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 // };
 
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-export function middleware(request) {
-  // Check karo ki user ke paas auth_token cookie hai ya nahi
-  const token = request.cookies.get('auth_token')?.value;
-  const isLoginPage = request.nextUrl.pathname === '/login';
-
-  // Agar token NAHI hai aur user dashboard (ya kisi aur page) par jana chahta hai
-  if (!token && !isLoginPage) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // Agar token HAI aur user wapas login page par aana chahta hai (toh direct andar bhej do)
-  if (token && isLoginPage) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
+export function middleware(req) {
   return NextResponse.next();
 }
 
-// Ye middleware sirf in pages par kaam karega (Images, CSS wagaira ko block nahi karega)
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
