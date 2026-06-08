@@ -23,7 +23,7 @@ export default function SupplierPassbook() {
   const fetchSupplierDetails = async () => {
     try {
       const token = Cookies.get("auth_token"); // <-- Chaabi nikali
-      const res = await axios.get(`http://localhost:5000/api/suppliers/${id}`, {
+      const res = await axios.get(`https://agrovault.onrender.com/api/suppliers/${id}`, {
         headers: { Authorization: `Bearer ${token}` } // <-- Envelop bheja
       });
       setSupplier(res.data.data);
@@ -44,7 +44,7 @@ export default function SupplierPassbook() {
     setIsProcessing(true);
     try {
       const token = Cookies.get("auth_token"); // <-- Chaabi nikali
-      await axios.post(`http://localhost:5000/api/suppliers/${id}/pay`, 
+      await axios.post(`https://agrovault.onrender.com/api/suppliers/${id}/pay`, 
         { amount: Number(payAmount) },
         { headers: { Authorization: `Bearer ${token}` } } // <-- Envelop bheja
       );

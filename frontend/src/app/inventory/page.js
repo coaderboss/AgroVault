@@ -35,7 +35,7 @@ export default function Inventory() {
       const token = Cookies.get("auth_token"); // 👈 Chaabi nikali
       const config = { headers: { Authorization: `Bearer ${token}` } }; // 👈 Envelop tayar kiya
 
-      const res = await axios.get(`http://localhost:5000/api/products?page=${page}&limit=${limit}`, config); // 👈 Config bheja
+      const res = await axios.get(`https://agrovault.onrender.com/api/products?page=${page}&limit=${limit}`, config); // 👈 Config bheja
       setProducts(res.data.data);
       setTotalPages(res.data.pagination.totalPages);
       setTotalItems(res.data.pagination.totalItems);
@@ -72,7 +72,7 @@ export default function Inventory() {
         stockQty: Number(newProduct.stockQty)
       };
 
-      await axios.post("http://localhost:5000/api/products", payload, config); // 👈 Config bheja
+      await axios.post("https://agrovault.onrender.com/api/products", payload, config); // 👈 Config bheja
       
       setIsModalOpen(false); 
       setNewProduct({ name: "", category: "Fertilizer", buyPrice: "", sellPrice: "", stockQty: "", unit: "KG", brand: "" }); 
@@ -102,7 +102,7 @@ export default function Inventory() {
         stockQty: Number(editingProduct.stockQty)
       };
 
-      await axios.put(`http://localhost:5000/api/products/${editingProduct.id}`, payload, config); // 👈 Config bheja
+      await axios.put(`https://agrovault.onrender.com/api/products/${editingProduct.id}`, payload, config); // 👈 Config bheja
       
       setEditModalOpen(false);
       setEditingProduct(null);

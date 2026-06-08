@@ -38,8 +38,8 @@ export default function NewPurchase() {
         const config = { headers: { Authorization: `Bearer ${token}` } }; // Envelop tayar kiya
 
         const [supRes, prodRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/suppliers", config),
-          axios.get("http://localhost:5000/api/products", config) 
+          axios.get("https://agrovault.onrender.com/api/suppliers", config),
+          axios.get("https://agrovault.onrender.com/api/products", config) 
         ]);
         setSuppliers(supRes.data.data);
         setProducts(prodRes.data.data);
@@ -105,7 +105,7 @@ export default function NewPurchase() {
         stockQty: 0 
       };
       
-      const res = await axios.post("http://localhost:5000/api/products", payload, config);
+      const res = await axios.post("https://agrovault.onrender.com/api/products", payload, config);
       const createdProd = res.data.data;
 
       setProducts([createdProd, ...products]);
@@ -143,7 +143,7 @@ export default function NewPurchase() {
         }))
       };
 
-      await axios.post("http://localhost:5000/api/purchases", payload, config);
+      await axios.post("https://agrovault.onrender.com/api/purchases", payload, config);
       
       router.push(`/suppliers/${selectedSupplier}`);
       

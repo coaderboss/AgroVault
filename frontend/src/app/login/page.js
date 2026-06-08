@@ -40,7 +40,7 @@ export default function Login() {
     try {
       if (isLoginMode) {
         // ─── LOGIN LOGIC ───
-        const res = await axios.post("http://localhost:5000/api/login", {
+        const res = await axios.post("https://agrovault.onrender.com/api/login", {
           phone: formData.phone,
           password: formData.password
         });
@@ -64,7 +64,7 @@ export default function Login() {
           return showPremiumAlert("error", "Phone number must be at least 10 digits.");
         }
 
-        const res = await axios.post("http://localhost:5000/api/register", formData);
+        const res = await axios.post("https://agrovault.onrender.com/api/register", formData);
         
         if (res.data.success) {
           showPremiumAlert("success", "Account created successfully! Please login.");

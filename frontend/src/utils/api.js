@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // ─── CENTRALIZED AXIOS INSTANCE ───
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Ab har jagah poora URL nahi likhna padega
+  baseURL: 'https://agrovault.onrender.com/api', // Ab har jagah poora URL nahi likhna padega
   headers: {
     'Content-Type': 'application/json',
   },

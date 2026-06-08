@@ -22,8 +22,8 @@ export default function PointOfSale() {
         const token = Cookies.get("auth_token"); // <-- Chaabi nikali
         const config = { headers: { Authorization: `Bearer ${token}` } }; // <-- Envelop banaya
         
-        const prodRes = await axios.get("http://localhost:5000/api/products", config); // <-- Envelop bheja
-        const custRes = await axios.get("http://localhost:5000/api/customers", config); // <-- Envelop bheja
+        const prodRes = await axios.get("https://agrovault.onrender.com/api/products", config); // <-- Envelop bheja
+        const custRes = await axios.get("https://agrovault.onrender.com/api/customers", config); // <-- Envelop bheja
         setProducts(prodRes.data.data);
         setCustomers(custRes.data.data);
         setLoading(false);
@@ -95,7 +95,7 @@ export default function PointOfSale() {
         }))
       };
 
-      const res = await axios.post("http://localhost:5000/api/orders", orderPayload, {
+      const res = await axios.post("https://agrovault.onrender.com/api/orders", orderPayload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -120,7 +120,7 @@ export default function PointOfSale() {
       setSelectedCustomer("");
 
       // Stock update karne ke liye wapas fetch karna
-      const prodRes = await axios.get("http://localhost:5000/api/products", {
+      const prodRes = await axios.get("https://agrovault.onrender.com/api/products", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProducts(prodRes.data.data);

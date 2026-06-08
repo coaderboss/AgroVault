@@ -20,7 +20,7 @@ export default function Ledger() {
   const fetchUdhaar = async () => {
     try {
       const token = Cookies.get("auth_token"); 
-      const res = await axios.get("http://localhost:5000/api/udhaar", {
+      const res = await axios.get("https://agrovault.onrender.com/api/udhaar", {
         headers: { Authorization: `Bearer ${token}` } 
       });
       setPendingOrders(res.data.data);
@@ -51,7 +51,7 @@ export default function Ledger() {
     try {
       const token = Cookies.get("auth_token"); 
       
-      await axios.post(`http://localhost:5000/api/customers/${paymentModal.order.customerId}/bulk-pay`, {
+      await axios.post(`https://agrovault.onrender.com/api/customers/${paymentModal.order.customerId}/bulk-pay`, {
         amount: Number(paymentModal.amountInput)
       }, {
         headers: { Authorization: `Bearer ${token}` } 

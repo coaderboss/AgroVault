@@ -27,7 +27,7 @@ export default function CustomerProfile() {
   const fetchProfile = async () => {
     try {
       const token = Cookies.get("auth_token"); // <-- Chaabi
-      const res = await axios.get(`http://localhost:5000/api/customers/${id}`, {
+      const res = await axios.get(`https://agrovault.onrender.com/api/customers/${id}`, {
         headers: { Authorization: `Bearer ${token}` } // <-- Envelop
       });
       setProfile(res.data.data);
@@ -41,7 +41,7 @@ export default function CustomerProfile() {
     setLoadingCredits(true);
     try {
       const token = Cookies.get("auth_token"); // <-- Chaabi
-      const res = await axios.get(`http://localhost:5000/api/customers/${id}/payments?page=${pageToFetch}&limit=5`, {
+      const res = await axios.get(`https://agrovault.onrender.com/api/customers/${id}/payments?page=${pageToFetch}&limit=5`, {
         headers: { Authorization: `Bearer ${token}` } // <-- Envelop
       });
       if (pageToFetch === 1) {
@@ -69,7 +69,7 @@ export default function CustomerProfile() {
     setIsProcessing(true);
     try {
       const token = Cookies.get("auth_token"); // <-- Chaabi
-      await axios.post(`http://localhost:5000/api/customers/${id}/bulk-pay`, 
+      await axios.post(`https://agrovault.onrender.com/api/customers/${id}/bulk-pay`, 
         { amount: Number(bulkPayAmount) },
         { headers: { Authorization: `Bearer ${token}` } } // <-- Envelop
       );

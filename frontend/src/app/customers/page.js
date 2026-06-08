@@ -26,7 +26,7 @@ export default function Customers() {
   const fetchCustomers = async () => {
     try {
       const token = Cookies.get("auth_token"); // Token nikala
-      const res = await axios.get("http://localhost:5000/api/customers", {
+      const res = await axios.get("https://agrovault.onrender.com/api/customers", {
         headers: { Authorization: `Bearer ${token}` } // API ko token bheja
       });
       setCustomers(res.data.data);
@@ -51,7 +51,7 @@ export default function Customers() {
     setIsSubmitting(true);
     try {
       const token = Cookies.get("auth_token");
-      await axios.post("http://localhost:5000/api/customers", newCustomer, {
+      await axios.post("https://agrovault.onrender.com/api/customers", newCustomer, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsModalOpen(false); 
@@ -70,7 +70,7 @@ export default function Customers() {
     setProfileModal(true); 
     try {
       const token = Cookies.get("auth_token");
-      const res = await axios.get(`http://localhost:5000/api/customers/${id}`, {
+      const res = await axios.get(`https://agrovault.onrender.com/api/customers/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSelectedProfile(res.data.data);
@@ -90,7 +90,7 @@ export default function Customers() {
     setIsProcessingPayment(true);
     try {
       const token = Cookies.get("auth_token");
-      await axios.post(`http://localhost:5000/api/customers/${selectedProfile.id}/bulk-pay`, {
+      await axios.post(`https://agrovault.onrender.com/api/customers/${selectedProfile.id}/bulk-pay`, {
         amount: Number(bulkPayAmount)
       }, {
         headers: { Authorization: `Bearer ${token}` }

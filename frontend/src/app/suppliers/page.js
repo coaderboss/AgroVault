@@ -19,7 +19,7 @@ export default function Suppliers() {
   const fetchSuppliers = async () => {
     try {
       const token = Cookies.get("auth_token"); // Token nikala
-      const res = await axios.get("http://localhost:5000/api/suppliers", {
+      const res = await axios.get("https://agrovault.onrender.com/api/suppliers", {
         headers: { Authorization: `Bearer ${token}` } // Envelop mein bheja
       });
       setSuppliers(res.data.data);
@@ -39,7 +39,7 @@ export default function Suppliers() {
     setIsSubmitting(true);
     try {
       const token = Cookies.get("auth_token"); // Token nikala
-      await axios.post("http://localhost:5000/api/suppliers", newSupplier, {
+      await axios.post("https://agrovault.onrender.com/api/suppliers", newSupplier, {
         headers: { Authorization: `Bearer ${token}` } // Envelop mein bheja
       });
       setIsModalOpen(false);

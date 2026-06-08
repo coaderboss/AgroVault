@@ -28,8 +28,8 @@ export default function Dashboard() {
         const config = { headers: { Authorization: `Bearer ${token}` } }; // Chaabi ko envelop mein dala
 
         // APIs call karte waqt config (chaabi) sath bheji
-        const prodRes = await axios.get("http://localhost:5000/api/products", config);
-        const custRes = await axios.get("http://localhost:5000/api/customers", config);
+        const prodRes = await axios.get("https://agrovault.onrender.com/api/products", config);
+        const custRes = await axios.get("https://agrovault.onrender.com/api/customers", config);
         
         const lowStockItems = prodRes.data.data.filter(p => p.stockQty < 10).length;
 
