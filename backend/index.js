@@ -16,7 +16,6 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
 // ==========================================
@@ -39,8 +38,6 @@ const auth = (req, res, next) => {
   }
 };
 
-
-const cors = require('cors');
 
 // Apne Vercel wale link ko allow karein (Aakhiri mein slash '/' mat lagana)
 app.use(cors({
