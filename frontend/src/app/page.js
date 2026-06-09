@@ -65,14 +65,23 @@ export default function Dashboard() {
     <div className="flex flex-col gap-4 md:gap-6 animate-in fade-in duration-500 pb-28 md:pb-10">
     
       {/* ─── HEADER (Namaste & Shop Name) ─── */}
-      <div className="flex flex-row items-center justify-between gap-2 md:gap-4">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">
-            Namaste, {userData.name.split(" ")[0]}! 🙏
-          </h1>
-          <p className="text-gray-500 text-xs md:text-lg font-medium mt-1 flex items-center gap-1.5">
-            <Store size={16} className="text-emerald-600 md:w-[18px] md:h-[18px]"/> <span className="truncate max-w-[150px] md:max-w-none">{userData.shopName}</span>
-          </p>
+          <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">Namaste, {userInfo?.name?.toUpperCase() || 'USER'}!</h1>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
+            <p className="text-gray-500 font-medium flex items-center gap-2 text-sm md:text-base">
+              <Store size={16} className="text-emerald-500" /> {userInfo?.shopName || 'Shop'}
+            </p>
+            
+            {/* ─── SHOP KEY BADGE (Sirf Owner ko dikhega) ─── */}
+            {userInfo?.role === "OWNER" && userInfo?.shopKey && (
+              <div className="bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg flex items-center gap-2 w-fit">
+                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Staff Key:</span>
+                <span className="font-black text-indigo-700 tracking-wider text-sm">{userInfo.shopKey}</span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="text-[10px] md:text-sm font-bold text-gray-600 uppercase tracking-widest bg-gray-200/50 px-3 py-2 md:px-5 md:py-3 rounded-lg md:rounded-xl inline-block text-center">
           {today}

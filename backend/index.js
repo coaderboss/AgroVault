@@ -51,10 +51,11 @@ app.use(cors({
 // 0. AUTHENTICATION (REGISTER & LOGIN) APIs
 // ==========================================
 
-// ─── NAYI DUKAAN REGISTER KARNA (SIGN UP) ───
+// ─── NAYI DUKAAN YA STAFF REGISTER KARNA (SIGN UP) ───
 app.post('/api/register', async (req, res) => {
   try {
-    const { name, phone, password, shopName, shopType } = req.body;
+    // UI se role aur shopKey bhi aayegi ab
+    const { name, phone, password, shopName, shopType, role, shopKey } = req.body;
 
     const existingUser = await prisma.user.findUnique({ where: { phone } });
     if (existingUser) {
@@ -62,12 +63,42 @@ app.post('/api/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    let newUserData = { name, phone, password: hashedPassword, role: role || "OWNER" };
 
-    const newUser = await prisma.user.create({
-      data: { name, phone, password: hashedPassword, shopName, shopType }
+    // AGAR USER "OWNER" HAI:
+    if (newUserData.role === "OWNER") {
+      newUserData.shopName = shopName;
+      newUserData.shopType = shopType;
+      // Ek unique 6-character ki chaabi banate hain
+      newUserData.shopKey = 'AGRO-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    } 
+    
+    // AGAR USER "EMPLOYEE" HAI:
+    else if (newUserData.role === "EMPLOYEE") {
+      if (!shopKey) {
+        return res.status(400).json({ success: false, message: "Employee register karne ke liye Shop Key zaroori hai!" });
+      }
+      
+      // Malik ko uski chaabi se dhoondho
+      const malik = await prisma.user.findUnique({ where: { shopKey: shopKey } });
+      if (!malik) {
+        return res.status(404).json({ success: false, message: "Galat Shop Key! Malik ki dukan nahi mili." });
+      }
+
+      // Employee ke khate mein malik ki details daal do
+      newUserData.ownerId = malik.id;
+      newUserData.shopName = malik.shopName; // Taki employee ko app me shop ka naam dikhe
+    }
+
+    // User create kardo
+    const newUser = await prisma.user.create({ data: newUserData });
+
+    res.status(201).json({ 
+      success: true, 
+      message: newUserData.role === "OWNER" ? "Dukaan successfully ban gayi!" : "Staff account successfully ban gaya!",
+      shopKey: newUser.shopKey // UI mein owner ko uski key dikhane ke kaam aayega
     });
 
-    res.status(201).json({ success: true, message: "Account successfully ban gaya!" });
   } catch (error) {
     console.error("Register Error:", error);
     res.status(500).json({ success: false, message: "Account banane mein gadbad hui" });
@@ -89,8 +120,16 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ success: false, message: "Galat password!" });
     }
 
+    // Token mein role aur ownerId daal diya
     const token = jwt.sign(
-      { id: user.id, name: user.name, shopName: user.shopName, shopType: user.shopType },
+      { 
+        id: user.id, 
+        name: user.name, 
+        shopName: user.shopName, 
+        shopType: user.shopType,
+        role: user.role,           // NAYA ADD KIYA
+        ownerId: user.ownerId      // NAYA ADD KIYA
+      },
       SECRET_KEY,
       { expiresIn: '7d' } 
     );
@@ -99,7 +138,13 @@ app.post('/api/login', async (req, res) => {
       success: true,
       message: "Login successful!",
       token,
-      user: { name: user.name, shopName: user.shopName, shopType: user.shopType }
+      user: { 
+        name: user.name, 
+        shopName: user.shopName, 
+        shopType: user.shopType,
+        role: user.role,           // NAYA ADD KIYA
+        shopKey: user.shopKey      // NAYA ADD KIYA (Taki Owner ko apni key dikh sake)
+      }
     });
 
   } catch (error) {
