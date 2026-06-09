@@ -60,8 +60,15 @@ app.use(cors({
 // ─── NAYI DUKAAN YA STAFF REGISTER KARNA (SIGN UP) ───
 app.post('/api/register', async (req, res) => {
   try {
-    // UI se role aur shopKey bhi aayegi ab
     const { name, phone, password, shopName, shopType, role, shopKey } = req.body;
+
+    // ─── SECURITY VALIDATIONS ───
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ success: false, message: "Mobile number exactly 10 digits ka hona chahiye! Na kam, na zyada." });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: "Password kam se kam 6 characters ka hona chahiye!" });
+    }
 
     const existingUser = await prisma.user.findUnique({ where: { phone } });
     if (existingUser) {
@@ -225,7 +232,9 @@ app.post('/api/customers/:id/bulk-pay', auth, async (req, res) => {
     const originalAmount = Number(amount);
     amount = originalAmount;
 
-    if (amount <= 0) return res.status(400).json({ success: false, message: "Amount sahi nahi hai" });
+    if (!amount || amount <= 0 || isNaN(amount)) {
+      return res.status(400).json({ success: false, message: "Amount hamesha 0 se bada aur number hona chahiye!" });
+    }
 
     // Verify customer belongs to user
     const customer = await prisma.customer.findFirst({ where: { id: req.params.id, userId: req.shopOwnerId } }); // <-- FIX

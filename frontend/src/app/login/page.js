@@ -202,7 +202,20 @@ export default function Login() {
             <div>
               <div className="relative">
                 <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" name="phone" required placeholder="Mobile Number" maxLength={10} value={formData.phone} onChange={handleChange}
+                <input 
+                  type="text" 
+                  name="phone" 
+                  required 
+                  placeholder="10-Digit Mobile Number" 
+                  maxLength={10} 
+                  pattern="\d{10}" // Sirf 10 digits allow karega
+                  title="Please enter exactly 10 digits"
+                  value={formData.phone} 
+                  onChange={(e) => {
+                    // Sirf numbers (0-9) allow karne ka logic
+                    const value = e.target.value.replace(/\D/g, "");
+                    setFormData({ ...formData, phone: value });
+                  }}
                   className="w-full pl-12 pr-4 py-3 md:py-3.5 bg-gray-50 border border-gray-200 rounded-xl md:rounded-2xl text-gray-900 font-bold focus:outline-none focus:border-gray-900 transition-all text-sm"
                 />
               </div>
