@@ -116,46 +116,48 @@ export default function Inventory() {
   };
 
   return (
-    <div className="animate-in fade-in duration-500 flex flex-col h-full">
+    <div className="animate-in fade-in duration-500 flex flex-col px-2 sm:px-4 md:px-0 pb-28 md:pb-10">
       
       {/* ─── PAGE HEADER ─── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-3 md:gap-4">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Inventory</h1>
-          <p className="text-gray-500 font-medium mt-1">Manage your warehouse stock and pricing.</p>
+          <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Inventory</h1>
+          <p className="text-xs md:text-sm text-gray-500 font-medium mt-0.5 md:mt-1">Manage your warehouse stock and pricing.</p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 md:w-[18px] md:h-[18px]" />
             <input 
               type="text" 
               placeholder="Search inventory..." 
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm"
+              className="w-full pl-9 md:pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs md:text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm"
             />
           </div>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-colors whitespace-nowrap active:scale-95"
+            className="w-full sm:w-auto justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 md:px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 shadow-sm transition-colors whitespace-nowrap active:scale-95"
           >
-            <Plus size={18} />
-            <span className="hidden sm:inline">Add Product</span>
+            <Plus size={16} className="md:w-[18px] md:h-[18px]" />
+            <span>Add Product</span>
           </button>
         </div>
       </div>
 
       {/* ─── DATA TABLE ─── */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden">
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest w-1/2">Product Details</th>
-                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">In Stock</th>
-                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Price</th>
-                <th className="px-6 py-4"></th>
-              </tr>
-            </thead>
+        {/* Yahan horizontal scrollbar hide kiya hai aur swipe smooth kiya hai */}
+          <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  {/* min-w-[200px] lagane se naam pichkega nahi */}
+                  <th className="px-4 md:px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest min-w-[200px]">Product Details</th>
+                  <th className="px-4 md:px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center min-w-[100px]">In Stock</th>
+                  <th className="px-4 md:px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right min-w-[120px]">Price</th>
+                  <th className="px-4 md:px-6 py-4 min-w-[60px]"></th>
+                </tr>
+              </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
@@ -170,29 +172,29 @@ export default function Inventory() {
               ) : (
                 products.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
+                    <td className="px-4 md:px-6 py-4">
+                      <div className="flex items-center gap-3 md:gap-4">
                         <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                          <Package size={20} />
+                          <Package size={18} />
                         </div>
                         <div>
-                          <div className="font-bold text-gray-900">{product.name}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{product.brand || 'No Brand'} • {product.category}</div>
+                          <div className="font-bold text-sm text-gray-900 whitespace-nowrap">{product.name}</div>
+                          <div className="text-xs text-gray-500 mt-0.5 whitespace-nowrap">{product.brand || 'No Brand'} • {product.category}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${
+                    <td className="px-4 md:px-6 py-4 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${
                         product.stockQty > 10 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
                       }`}>
                         {product.stockQty} {product.unit}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="font-black text-gray-900">₹{product.sellPrice.toLocaleString()}</div>
-                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Buy: ₹{product.buyPrice}</div>
+                    <td className="px-4 md:px-6 py-4 text-right">
+                      <div className="font-black text-sm md:text-base text-gray-900">₹{product.sellPrice.toLocaleString()}</div>
+                      <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Buy: ₹{product.buyPrice}</div>
                     </td>
-                    <td className="px-6 py-4 text-right relative">
+                    <td className="px-4 md:px-6 py-4 text-right relative">
                       <button 
                         onClick={() => setActiveDropdown(activeDropdown === product.id ? null : product.id)}
                         className="text-gray-400 hover:text-indigo-600 transition-colors p-2 rounded-lg hover:bg-indigo-50 focus:outline-none"
@@ -223,11 +225,11 @@ export default function Inventory() {
         </div>
 
         {/* ─── PAGINATION CONTROLS ─── */}
-        <div className="border-t border-gray-100 p-4 flex items-center justify-between bg-gray-50/50">
-          <div className="text-xs font-bold text-gray-500">
+        <div className="border-t border-gray-100 p-3 md:p-4 flex items-center justify-between bg-gray-50/50">
+          <div className="text-[9px] md:text-xs font-bold text-gray-500">
             Showing <span className="text-gray-900">{(currentPage - 1) * limit + 1}</span> to <span className="text-gray-900">{Math.min(currentPage * limit, totalItems)}</span> of <span className="text-gray-900">{totalItems}</span> items
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <button 
               onClick={handlePrevPage}
               disabled={currentPage === 1 || loading}
@@ -251,27 +253,27 @@ export default function Inventory() {
 
       {/* ─── ADD PRODUCT MODAL ─── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
-              <h3 className="font-black text-gray-900 text-lg flex items-center gap-2">
-                <Package className="text-indigo-600" size={20} /> Add New Inventory Item
+            <div className="p-4 md:p-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
+              <h3 className="font-black text-gray-900 text-base md:text-lg flex items-center gap-2">
+                <Package size={18} className="text-indigo-600 md:w-5 md:h-5" /> Add Inventory Item
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:bg-white hover:shadow-sm p-2 rounded-full transition-all">
-                <X size={20} />
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:bg-white hover:shadow-sm p-1.5 md:p-2 rounded-full transition-all">
+                <X size={18} className="md:w-5 md:h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddProduct} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+            <form onSubmit={handleAddProduct} className="p-4 md:p-6 max-h-[70vh] md:max-h-full overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-4 md:mb-6">
                 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Product Name</label>
+                  <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 px-1">Product Name</label>
                   <input 
                     type="text" placeholder="e.g., Urea Fertilizer 45kg" required
                     value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                    className="w-full px-4 py-2.5 md:py-3 bg-gray-50 border border-gray-200 rounded-xl md:rounded-2xl text-sm md:text-base font-bold text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                   />
                 </div>
 

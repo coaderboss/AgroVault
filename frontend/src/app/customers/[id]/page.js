@@ -87,60 +87,60 @@ export default function CustomerProfile() {
   if (loading) return <div className="h-full flex items-center justify-center font-bold text-gray-500 animate-pulse">Khata Book Loading...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto pb-20 animate-in fade-in duration-300">
+    <div className="max-w-4xl mx-auto pb-24 md:pb-20 animate-in fade-in duration-300 px-3 md:px-0">
       
       {/* ─── HEADER ─── */}
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => router.push('/customers')} className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition-colors">
-          <ArrowLeft size={20} />
+      <div className="flex items-center gap-3 md:gap-4 mb-5 md:mb-6">
+        <button onClick={() => router.push('/customers')} className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition-colors shadow-sm shrink-0">
+          <ArrowLeft size={18} className="md:w-5 md:h-5" />
         </button>
         <div>
-          <h1 className="text-3xl font-black text-gray-900 leading-tight">{profile.name}</h1>
-          <div className="flex items-center gap-3 text-sm font-bold text-gray-500 mt-1">
-            <span className="flex items-center gap-1.5"><MapPin size={14}/> {profile.village}</span>
-            <span className="flex items-center gap-1.5"><Phone size={14}/> {profile.mobile}</span>
+          <h1 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">{profile.name}</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:text-sm font-bold text-gray-500 mt-1">
+            <span className="flex items-center gap-1"><MapPin size={12} className="md:w-[14px] md:h-[14px]"/> {profile.village}</span>
+            <span className="flex items-center gap-1"><Phone size={12} className="md:w-[14px] md:h-[14px]"/> {profile.mobile}</span>
           </div>
         </div>
       </div>
 
       {/* ─── MAIN LEDGER METRICS ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 relative z-10">Total Market Due</div>
-          <div className={`text-3xl font-black relative z-10 ${profile.totalDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
+        <div className="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden">
+          <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 relative z-10">Total Market Due</div>
+          <div className={`text-2xl md:text-3xl font-black relative z-10 ${profile.totalDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
             ₹{profile.totalDue.toLocaleString('en-IN')}
           </div>
-          <Wallet size={80} className={`absolute -bottom-4 -right-4 opacity-5 ${profile.totalDue > 0 ? 'text-rose-900' : 'text-emerald-900'}`} />
+          <Wallet size={80} className={`absolute -bottom-4 -right-4 opacity-[0.03] md:w-[100px] md:h-[100px] ${profile.totalDue > 0 ? 'text-rose-900' : 'text-emerald-900'}`} />
         </div>
-        <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100">
-          <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Purchased</div>
-          <div className="text-2xl font-black text-gray-800">₹{profile.totalPurchased.toLocaleString('en-IN')}</div>
+        <div className="bg-gray-50 p-4 md:p-5 rounded-2xl md:rounded-3xl border border-gray-100 flex flex-col justify-center">
+          <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Purchased</div>
+          <div className="text-lg md:text-2xl font-black text-gray-800">₹{profile.totalPurchased.toLocaleString('en-IN')}</div>
         </div>
-        <div className="bg-emerald-50 p-5 rounded-3xl border border-emerald-100">
-          <div className="text-xs font-bold text-emerald-700 uppercase tracking-widest mb-1">Total Paid</div>
-          <div className="text-2xl font-black text-emerald-800">₹{profile.totalPaid.toLocaleString('en-IN')}</div>
+        <div className="bg-emerald-50 p-4 md:p-5 rounded-2xl md:rounded-3xl border border-emerald-100 flex flex-col justify-center">
+          <div className="text-[10px] md:text-xs font-bold text-emerald-700 uppercase tracking-widest mb-1">Total Paid</div>
+          <div className="text-lg md:text-2xl font-black text-emerald-800">₹{profile.totalPaid.toLocaleString('en-IN')}</div>
         </div>
       </div>
 
       {/* ─── BULK PAYMENT ─── */}
       {profile.totalDue > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 mb-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl md:rounded-3xl p-4 md:p-5 mb-6 md:mb-8 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h4 className="font-bold text-amber-900 flex items-center gap-2"><Wallet size={18}/> Deposit Payment</h4>
-            <p className="text-xs text-amber-700 font-medium mt-1">Paise jama karein, purani slip auto-clear hogi.</p>
+            <h4 className="font-bold text-amber-900 text-sm md:text-base flex items-center gap-2"><Wallet size={16} className="md:w-[18px] md:h-[18px]"/> Deposit Payment</h4>
+            <p className="text-[11px] md:text-xs text-amber-700 font-medium mt-0.5 md:mt-1">Paise jama karein, purani slip auto-clear hogi.</p>
           </div>
-          <div className="flex gap-2 w-full md:w-auto">
-            <div className="relative flex-1 md:w-48">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-44">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
               <input 
                 type="number" placeholder="Amount..."
                 value={bulkPayAmount} onChange={(e) => setBulkPayAmount(e.target.value)}
-                className="w-full pl-8 pr-4 py-3 bg-white border border-amber-200 rounded-xl font-black text-gray-900 outline-none focus:border-amber-500"
+                className="w-full pl-8 pr-4 py-2.5 md:py-3 bg-white border border-amber-200 rounded-xl font-black text-gray-900 outline-none focus:border-amber-500 text-sm md:text-base"
               />
             </div>
             <button 
               onClick={handleBulkPayment} disabled={isProcessing}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center gap-2 whitespace-nowrap disabled:opacity-70"
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-5 md:px-6 py-2.5 md:py-3 rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center gap-1.5 text-xs md:text-sm whitespace-nowrap disabled:opacity-70"
             >
               {isProcessing ? "Wait..." : "Jama Karein"}
             </button>
@@ -149,20 +149,20 @@ export default function CustomerProfile() {
       )}
 
       {/* ─── TABS NAVIGATION ─── */}
-      <div className="flex space-x-2 border-b border-gray-200 mb-6 overflow-x-auto pb-1">
-        <button onClick={() => setActiveTab("transactions")} className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === "transactions" ? "border-emerald-500 text-emerald-600" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-          <ReceiptText size={18} /> Parchi Logs (Bills)
+      <div className="flex space-x-1 border-b border-gray-200 mb-4 md:mb-6 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <button onClick={() => setActiveTab("transactions")} className={`flex items-center gap-1.5 px-4 py-2.5 text-xs md:text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === "transactions" ? "border-emerald-500 text-emerald-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+          <ReceiptText size={16} className="md:w-[18px] md:h-[18px]" /> Parchi Logs
         </button>
-        <button onClick={() => setActiveTab("credits")} className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === "credits" ? "border-indigo-500 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-          <ArrowDownToLine size={18} /> Jama Details (Credits)
+        <button onClick={() => setActiveTab("credits")} className={`flex items-center gap-1.5 px-4 py-2.5 text-xs md:text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === "credits" ? "border-indigo-500 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+          <ArrowDownToLine size={16} className="md:w-[18px] md:h-[18px]" /> Jama Details
         </button>
-        <button onClick={() => setActiveTab("analytics")} className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === "analytics" ? "border-amber-500 text-amber-600" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
-          <TrendingUp size={18} /> Business Summary
+        <button onClick={() => setActiveTab("analytics")} className={`flex items-center gap-1.5 px-4 py-2.5 text-xs md:text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === "analytics" ? "border-amber-500 text-amber-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+          <TrendingUp size={16} className="md:w-[18px] md:h-[18px]" /> Summary
         </button>
       </div>
 
       {/* ─── TAB CONTENT ─── */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+      <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-100 shadow-sm p-3.5 md:p-6">
         
         {/* TAB 1: PARCHI LOGS */}
         {activeTab === "transactions" && (
@@ -173,10 +173,10 @@ export default function CustomerProfile() {
               return (
                 <div key={order.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                   <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 ${isPaid ? 'bg-emerald-500' : 'bg-rose-500'}`}>
-                    <ReceiptText size={16} className="text-white" />
+                    <ReceiptText size={14} className="text-white md:w-4 md:h-4" />
                   </div>
                   
-                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 md:p-5 rounded-xl md:rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-3">
                       <div className="text-xs font-black text-gray-400 uppercase tracking-widest">
                         {new Date(order.createdAt).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}

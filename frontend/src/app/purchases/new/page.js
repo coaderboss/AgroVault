@@ -157,7 +157,7 @@ export default function NewPurchase() {
   if (loading) return <div className="h-full flex items-center justify-center font-bold text-gray-500 animate-pulse">Loading Workspace...</div>;
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6 animate-in fade-in duration-300 relative">
+    <div className="flex flex-col-reverse md:flex-row gap-4 md:gap-6 animate-in fade-in duration-300 relative md:h-[calc(100vh-8rem)] pb-24 md:pb-0 px-2 sm:px-4 md:px-0">
       
       {/* ─── LEFT PANEL: PRODUCT CATALOG ─── */}
       <div className="flex-1 bg-white border border-gray-200 rounded-3xl shadow-sm flex flex-col overflow-hidden">
@@ -189,7 +189,7 @@ export default function NewPurchase() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
             {filteredProducts.map(product => (
               <div 
                 key={product.id} 

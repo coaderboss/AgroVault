@@ -65,86 +65,86 @@ export default function Dashboard() {
     <div className="animate-in fade-in duration-500 max-w-5xl mx-auto space-y-10">
 
       {/* ─── HEADER (Namaste & Shop Name Yahan Hai) ─── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-row items-center justify-between gap-2 md:gap-4">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight">
+          <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">
             Namaste, {userData.name.split(" ")[0]}! 🙏
           </h1>
-          <p className="text-gray-500 text-lg font-medium mt-1.5 flex items-center gap-2">
-            <Store size={18} className="text-emerald-600"/> {userData.shopName} Overview
+          <p className="text-gray-500 text-xs md:text-lg font-medium mt-1 flex items-center gap-1.5">
+            <Store size={16} className="text-emerald-600 md:w-[18px] md:h-[18px]"/> <span className="truncate max-w-[150px] md:max-w-none">{userData.shopName}</span>
           </p>
         </div>
-        <div className="text-sm font-bold text-gray-600 uppercase tracking-widest bg-gray-200/50 px-5 py-3 rounded-xl inline-block w-max">
+        <div className="text-[10px] md:text-sm font-bold text-gray-600 uppercase tracking-widest bg-gray-200/50 px-3 py-2 md:px-5 md:py-3 rounded-lg md:rounded-xl inline-block text-center">
           {today}
         </div>
       </div>
 
       {/* ─── COLORFUL METRICS CARDS ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {/* GREEN CARD: Sales */}
-        <div className="bg-emerald-500 rounded-3xl p-6 text-white shadow-lg shadow-emerald-500/30 flex flex-col justify-between min-h-[160px] transform transition hover:-translate-y-1">
+        <div className="bg-emerald-500 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg shadow-emerald-500/30 flex flex-col justify-between min-h-[110px] md:min-h-[160px] transform transition hover:-translate-y-1">
           <div className="flex justify-between items-start">
-            <div className="bg-white/20 p-3 rounded-2xl"><TrendingUp size={28} className="text-white" /></div>
-            <div className="text-emerald-100 text-xs font-bold uppercase tracking-widest">Sales</div>
+            <div className="bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl"><TrendingUp className="w-5 h-5 md:w-7 md:h-7 text-white" /></div>
+            <div className="text-emerald-100 text-[10px] md:text-xs font-bold uppercase tracking-widest">Sales</div>
           </div>
-          <div>
-            <div className="text-4xl font-black mb-1">₹0</div>
-            <div className="text-emerald-100 font-medium">Today's Revenue</div>
+          <div className="mt-2 md:mt-0">
+            <div className="text-xl md:text-4xl font-black mb-0 md:mb-1">₹0</div>
+            <div className="text-[10px] md:text-sm text-emerald-100 font-medium leading-tight">Today's Revenue</div>
           </div>
         </div>
 
         {/* RED CARD: Ledger/Pending */}
-        <div className="bg-rose-500 rounded-3xl p-6 text-white shadow-lg shadow-rose-500/30 flex flex-col justify-between min-h-[160px] transform transition hover:-translate-y-1">
+        <div className="bg-rose-500 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg shadow-rose-500/30 flex flex-col justify-between min-h-[110px] md:min-h-[160px] transform transition hover:-translate-y-1">
           <div className="flex justify-between items-start">
-            <div className="bg-white/20 p-3 rounded-2xl"><Wallet size={28} className="text-white" /></div>
-            <div className="text-rose-100 text-xs font-bold uppercase tracking-widest">Ledger</div>
+            <div className="bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl"><Wallet className="w-5 h-5 md:w-7 md:h-7 text-white" /></div>
+            <div className="text-rose-100 text-[10px] md:text-xs font-bold uppercase tracking-widest">Ledger</div>
           </div>
-          <div>
-            <div className="text-4xl font-black mb-1">₹0</div>
-            <div className="text-rose-100 font-medium">Pending Dues</div>
+          <div className="mt-2 md:mt-0">
+            <div className="text-xl md:text-4xl font-black mb-0 md:mb-1">₹0</div>
+            <div className="text-[10px] md:text-sm text-rose-100 font-medium leading-tight">Pending Dues</div>
           </div>
         </div>
 
         {/* BLUE CARD: Inventory */}
-        <div className="bg-blue-600 rounded-3xl p-6 text-white shadow-lg shadow-blue-600/30 flex flex-col justify-between min-h-[160px] transform transition hover:-translate-y-1">
+        <div className="bg-blue-600 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg shadow-blue-600/30 flex flex-col justify-between min-h-[110px] md:min-h-[160px] transform transition hover:-translate-y-1">
           <div className="flex justify-between items-start">
-            <div className="bg-white/20 p-3 rounded-2xl"><Boxes size={28} className="text-white" /></div>
-            <div className="text-blue-100 text-xs font-bold uppercase tracking-widest">Stock</div>
+            <div className="bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl"><Boxes className="w-5 h-5 md:w-7 md:h-7 text-white" /></div>
+            <div className="text-blue-100 text-[10px] md:text-xs font-bold uppercase tracking-widest">Stock</div>
           </div>
-          <div>
-            <div className="text-4xl font-black mb-1">{stats.products}</div>
-            <div className="text-blue-100 font-medium">Total Products</div>
+          <div className="mt-2 md:mt-0">
+            <div className="text-xl md:text-4xl font-black mb-0 md:mb-1">{stats.products}</div>
+            <div className="text-[10px] md:text-sm text-blue-100 font-medium leading-tight">Total Products</div>
           </div>
         </div>
 
         {/* PURPLE CARD: Alerts/Customers */}
-        <div className="bg-purple-600 rounded-3xl p-6 text-white shadow-lg shadow-purple-600/30 flex flex-col justify-between min-h-[160px] transform transition hover:-translate-y-1">
+        <div className="bg-purple-600 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg shadow-purple-600/30 flex flex-col justify-between min-h-[110px] md:min-h-[160px] transform transition hover:-translate-y-1">
           <div className="flex justify-between items-start">
-            <div className="bg-white/20 p-3 rounded-2xl"><UserPlus size={28} className="text-white" /></div>
-            <div className="text-purple-100 text-xs font-bold uppercase tracking-widest">Network</div>
+            <div className="bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl"><UserPlus className="w-5 h-5 md:w-7 md:h-7 text-white" /></div>
+            <div className="text-purple-100 text-[10px] md:text-xs font-bold uppercase tracking-widest">Network</div>
           </div>
-          <div>
-            <div className="text-4xl font-black mb-1">{stats.customers}</div>
-            <div className="text-purple-100 font-medium">Active Customers</div>
+          <div className="mt-2 md:mt-0">
+            <div className="text-xl md:text-4xl font-black mb-0 md:mb-1">{stats.customers}</div>
+            <div className="text-[10px] md:text-sm text-purple-100 font-medium leading-tight">Active Customers</div>
           </div>
         </div>
       </div>
 
       {/* ─── QUICK ACTIONS ─── */}
       <div>
-        <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-5">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link href="/sales" className="bg-white border-2 border-emerald-100 hover:border-emerald-500 rounded-3xl p-6 flex flex-col items-center justify-center gap-4 transition-all shadow-sm hover:shadow-md group">
-            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><ReceiptText size={32} strokeWidth={2.5} /></div>
-            <span className="font-bold text-gray-800 text-lg">Generate Bill</span>
+        <h2 className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-5">Quick Actions</h2>
+        <div className="grid grid-cols-3 gap-2 md:gap-6">
+          <Link href="/sales" className="bg-white border-2 border-emerald-100 hover:border-emerald-500 rounded-xl md:rounded-3xl p-3 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-all shadow-sm hover:shadow-md group">
+            <div className="w-10 h-10 md:w-16 md:h-16 bg-emerald-50 text-emerald-600 rounded-lg md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><ReceiptText className="w-5 h-5 md:w-8 md:h-8" strokeWidth={2.5} /></div>
+            <span className="font-bold text-gray-800 text-[10px] md:text-lg text-center leading-tight">Generate<br className="md:hidden"/> Bill</span>
           </Link>
-          <Link href="/udhaar" className="bg-white border-2 border-rose-100 hover:border-rose-500 rounded-3xl p-6 flex flex-col items-center justify-center gap-4 transition-all shadow-sm hover:shadow-md group">
-            <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Wallet size={32} strokeWidth={2.5} /></div>
-            <span className="font-bold text-gray-800 text-lg">Collect Due</span>
+          <Link href="/udhaar" className="bg-white border-2 border-rose-100 hover:border-rose-500 rounded-xl md:rounded-3xl p-3 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-all shadow-sm hover:shadow-md group">
+            <div className="w-10 h-10 md:w-16 md:h-16 bg-rose-50 text-rose-600 rounded-lg md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Wallet className="w-5 h-5 md:w-8 md:h-8" strokeWidth={2.5} /></div>
+            <span className="font-bold text-gray-800 text-[10px] md:text-lg text-center leading-tight">Collect<br className="md:hidden"/> Due</span>
           </Link>
-          <Link href="/customers" className="bg-white border-2 border-purple-100 hover:border-purple-500 rounded-3xl p-6 flex flex-col items-center justify-center gap-4 transition-all shadow-sm hover:shadow-md group">
-            <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><UserPlus size={32} strokeWidth={2.5} /></div>
-            <span className="font-bold text-gray-800 text-lg">Add Customer</span>
+          <Link href="/customers" className="bg-white border-2 border-purple-100 hover:border-purple-500 rounded-xl md:rounded-3xl p-3 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-all shadow-sm hover:shadow-md group">
+            <div className="w-10 h-10 md:w-16 md:h-16 bg-purple-50 text-purple-600 rounded-lg md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><UserPlus className="w-5 h-5 md:w-8 md:h-8" strokeWidth={2.5} /></div>
+            <span className="font-bold text-gray-800 text-[10px] md:text-lg text-center leading-tight">Add<br className="md:hidden"/> Customer</span>
           </Link>
         </div>
       </div>

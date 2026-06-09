@@ -139,7 +139,7 @@ export default function PointOfSale() {
   if (loading) return <div className="p-10 text-center font-bold text-gray-500 animate-pulse">Loading POS Terminal...</div>;
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col md:flex-row gap-6 animate-in fade-in duration-500">
+    <div className="flex flex-col-reverse md:flex-row gap-4 md:gap-6 animate-in fade-in duration-500 md:h-[calc(100vh-80px)] pb-24 md:pb-0 px-2 sm:px-4 md:px-0">
       
       {/* ─── LEFT: PRODUCT CATALOG ─── */}
       <div className="flex-1 flex flex-col h-full">
@@ -156,12 +156,12 @@ export default function PointOfSale() {
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 pb-24 md:pb-0">
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
             {filteredProducts.map((p) => (
               <div 
                 key={p.id} 
                 onClick={() => addToCart(p)}
-                className={`bg-white border-2 rounded-3xl p-5 cursor-pointer transition-all hover:shadow-md active:scale-95 flex flex-col justify-between h-36 ${p.stockQty > 0 ? 'border-transparent hover:border-emerald-400' : 'border-red-100 opacity-60'}`}
+                className={`className="bg-white border-2 rounded-xl md:rounded-3xl p-3 md:p-5 cursor-pointer transition-all hover:shadow-md active:scale-95 flex flex-col justify-between h-28 md:h-36 ${p.stockQty > 0 ? 'border-transparent hover:border-emerald-400' : 'border-red-100 opacity-60'}`}
               >
                 <div>
                   <div className="font-bold text-gray-900 leading-tight text-lg">{p.name}</div>
@@ -180,10 +180,10 @@ export default function PointOfSale() {
       </div>
 
       {/* ─── RIGHT: CART & CHECKOUT ─── */}
-      <div className="w-full md:w-[400px] bg-white border border-gray-200 rounded-3xl shadow-sm flex flex-col h-full overflow-hidden shrink-0">
+      <div className="w-full md:w-[400px] bg-white border border-gray-200 rounded-2xl md:rounded-3xl shadow-sm flex flex-col h-full overflow-hidden shrink-0 mt-4 md:mt-0">
         
         {/* Cart Header */}
-        <div className="bg-gray-50 p-5 border-b border-gray-100 flex items-center justify-between">
+        <div className="bg-gray-50 p-3 md:p-5 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2 font-black text-gray-900 text-lg">
             <ShoppingCart size={20} className="text-emerald-600" /> Current Bill
           </div>
@@ -218,7 +218,7 @@ export default function PointOfSale() {
             cart.map((item) => (
               <div key={item.id} className="flex flex-col bg-white p-4 rounded-2xl border border-gray-100 shadow-sm gap-3 group">
                 <div className="flex justify-between items-start">
-                  <div className="font-bold text-sm text-gray-900">{item.name}</div>
+                  <div className="font-bold text-xs md:text-sm text-gray-900 line-clamp-2">{item.name}</div>
                   <button onClick={() => removeFromCart(item.id)} className="text-gray-300 hover:text-rose-500 transition-colors">
                     <Trash2 size={18} />
                   </button>
@@ -276,7 +276,7 @@ export default function PointOfSale() {
 
           <button 
             onClick={handleCheckout}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg p-4 rounded-2xl shadow-lg shadow-emerald-600/30 flex justify-center items-center gap-2 active:scale-95 transition-all"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base md:text-lg p-3 md:p-4 rounded-xl md:rounded-2xl shadow-md md:shadow-lg shadow-emerald-600/30 flex justify-center items-center gap-2 active:scale-95 transition-all"
           >
             <ReceiptText size={20} />
             Generate Parchi
