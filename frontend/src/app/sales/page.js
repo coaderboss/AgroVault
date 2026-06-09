@@ -142,7 +142,7 @@ export default function PointOfSale() {
     <div className="flex flex-col-reverse md:flex-row gap-4 md:gap-6 animate-in fade-in duration-500 md:h-[calc(100vh-80px)] pb-24 md:pb-0 px-2 sm:px-4 md:px-0">
       
       {/* ─── LEFT: PRODUCT CATALOG ─── */}
-      <div className="flex-1 flex flex-col h-full">
+      <div className="flex-1 flex flex-col h-full print:hidden">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">Terminal</h1>
           <div className="relative w-72">
@@ -180,7 +180,7 @@ export default function PointOfSale() {
       </div>
 
       {/* ─── RIGHT: CART & CHECKOUT ─── */}
-      <div className="w-full md:w-[400px] bg-white border border-gray-200 rounded-2xl md:rounded-3xl shadow-sm flex flex-col h-full overflow-hidden shrink-0 mt-4 md:mt-0">
+      <div className="w-full md:w-[400px] bg-white border border-gray-200 rounded-2xl md:rounded-3xl shadow-sm flex flex-col h-full overflow-hidden shrink-0 mt-4 md:mt-0 print:hidden">
         
         {/* Cart Header */}
         <div className="bg-gray-50 p-3 md:p-5 border-b border-gray-100 flex items-center justify-between">
@@ -286,8 +286,8 @@ export default function PointOfSale() {
       </div>
       {/* ─── PREMIUM BILL SLIP MODAL ─── */}
       {generatedSlip && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden p-6 relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200 print:bg-transparent print:backdrop-blur-none print:p-0 print:items-start">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden p-6 relative print:shadow-none print:border-none print:w-full print:max-w-full print:p-2">
             
             {/* Header / Shop Name */}
             <div className="text-center border-b border-gray-200 pb-4 mb-4">
@@ -297,7 +297,7 @@ export default function PointOfSale() {
             </div>
 
             {/* Customer Info */}
-            <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+            <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100 print:bg-white print:border-gray-300">
               <div className="text-xs font-bold text-gray-500 uppercase">Customer</div>
               <div className="font-black text-gray-800 text-sm">{generatedSlip.customerName}</div>
               {generatedSlip.customerMobile && <div className="text-xs text-gray-500">Ph: {generatedSlip.customerMobile}</div>}
@@ -314,9 +314,9 @@ export default function PointOfSale() {
                 <div key={idx} className="flex justify-between items-start text-sm font-medium text-gray-800">
                   <div className="w-1/2 pr-2 leading-tight">{item.name}</div>
                   <div className="w-1/4 text-right text-xs text-gray-500">
-                    {item.qty} <span className="text-[10px] uppercase">{item.unit || 'Pcs'}</span><br/>× ₹{item.sellPrice}
+                    {item.qty} <span className="text-[10px] uppercase">{item.unit || 'Pcs'}</span><br/>× ₹{item.priceAtSale}
                   </div>
-                  <div className="w-1/4 text-right font-bold text-gray-900">₹{(item.qty * item.sellPrice).toLocaleString('en-IN')}</div>
+                  <div className="w-1/4 text-right font-bold text-gray-900">₹{(item.qty * item.priceAtSale).toLocaleString('en-IN')}</div>
                 </div>
               ))}
             </div>
@@ -339,9 +339,9 @@ export default function PointOfSale() {
               )}
             </div>
 
-            {/* Actions */}
-            <div className="mt-8 flex gap-3">
-              <button onClick={() => window.print()} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors">Print</button>
+            {/* Actions - print:hidden lagane se yeh paper par nahi aayenge */}
+            <div className="mt-8 flex gap-3 print:hidden">
+              <button onClick={() => window.print()} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors">🖨️ Print</button>
               <button onClick={() => setGeneratedSlip(null)} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors">Done</button>
             </div>
             

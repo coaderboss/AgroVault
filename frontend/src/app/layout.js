@@ -49,7 +49,7 @@ export default function RootLayout({ children }) {
         <div className="flex h-[100dvh] w-full">
           
           {/* ─── DESKTOP SIDEBAR ─── */}
-          <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 shadow-sm z-30">
+          <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 shadow-sm z-30 print:hidden">
             <div className="h-20 flex items-center px-8 border-b border-gray-100">
               <div className="text-3xl font-black tracking-tight text-gray-900">
                 Agro<span className="text-emerald-600">Vault</span>
@@ -89,7 +89,7 @@ export default function RootLayout({ children }) {
 
           {/* ─── MAIN CONTENT ─── */}
           <div className="flex-1 flex flex-col h-[100dvh] w-full bg-gray-50/50">
-            <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex justify-between items-center px-4 md:px-8 z-20 sticky top-0">
+            <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex justify-between items-center px-4 md:px-8 z-20 sticky top-0 print:hidden">
               <div className="md:hidden text-2xl font-black text-gray-900">Agro<span className="text-emerald-600">Vault</span></div>
               <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 w-96"><Search size={18} className="text-gray-400 mr-3" /><input type="text" placeholder="Search..." className="bg-transparent outline-none w-full text-sm" /></div>
               <div className="flex items-center gap-4">
@@ -106,7 +106,7 @@ export default function RootLayout({ children }) {
             </main>
 
             {/* MOBILE BOTTOM NAV */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50">
+      <nav className="md:hidden fixed bottom-0 w-full bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50 print:hidden">
         <div className="flex items-center h-16 px-4 overflow-x-auto gap-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {navItems.map((item) => {
             const Icon = item.icon;

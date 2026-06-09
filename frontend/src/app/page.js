@@ -62,9 +62,9 @@ export default function Dashboard() {
   const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
   return (
-    <div className="animate-in fade-in duration-500 max-w-5xl mx-auto space-y-10">
-
-      {/* ─── HEADER (Namaste & Shop Name Yahan Hai) ─── */}
+    <div className="flex flex-col gap-4 md:gap-6 animate-in fade-in duration-500 pb-28 md:pb-10">
+    
+      {/* ─── HEADER (Namaste & Shop Name) ─── */}
       <div className="flex flex-row items-center justify-between gap-2 md:gap-4">
         <div>
           <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">

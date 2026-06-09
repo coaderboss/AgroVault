@@ -320,20 +320,20 @@ export default function NewPurchase() {
 
       {/* ─── MODAL: ADD NEW PRODUCT ─── */}
       {showAddProductModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90dvh]">
             
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
-              <h3 className="font-black text-gray-900 text-lg flex items-center gap-2">
-                <Package className="text-indigo-600" size={20} /> Register New Product
+            <div className="p-4 md:p-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50 shrink-0">
+              <h3 className="font-black text-gray-900 text-base md:text-lg flex items-center gap-2">
+                <Package size={18} className="text-indigo-600 md:w-5 md:h-5" /> Register New Product
               </h3>
-              <button onClick={() => setShowAddProductModal(false)} className="text-gray-400 hover:bg-white hover:shadow-sm p-2 rounded-full transition-all">
-                <X size={20} />
+              <button onClick={() => setShowAddProductModal(false)} className="text-gray-400 hover:bg-white hover:shadow-sm p-1.5 md:p-2 rounded-full transition-all">
+                <X size={18} className="md:w-5 md:h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateProduct} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+            <form onSubmit={handleCreateProduct} className="p-4 md:p-6 overflow-y-auto flex-1 pb-24 md:pb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-4 md:mb-6">
                 
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1">Product Name *</label>

@@ -265,7 +265,7 @@ export default function Inventory() {
               </button>
             </div>
 
-            <form onSubmit={handleAddProduct} className="p-4 md:p-6 max-h-[70vh] md:max-h-full overflow-y-auto">
+            <form onSubmit={handleAddProduct} className="p-4 md:p-6 max-h-[75dvh] overflow-y-auto pb-24 md:pb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-4 md:mb-6">
                 
                 <div className="md:col-span-2">
