@@ -329,12 +329,19 @@ app.get('/api/products', auth, async (req, res) => {
 
 app.post('/api/products', auth, async (req, res) => {
   try {
-    const { name, brand, category, buyPrice, sellPrice, stockQty, unit } = req.body;
+    // Naye fields nikaale: isPackaged, packageUnit, qtyPerPackage
+    const { name, brand, category, buyPrice, sellPrice, stockQty, unit, isPackaged, packageUnit, qtyPerPackage } = req.body;
+    
     const newProduct = await prisma.product.create({
       data: { 
-        name, brand: brand || "Local", category, buyPrice: Number(buyPrice), 
-        sellPrice: Number(sellPrice), stockQty: Number(stockQty), unit,
-        userId: req.shopOwnerId // Samaan hamesha dukkan ke khate me judega
+        name, brand: brand || "Local", category, 
+        buyPrice: Number(buyPrice), sellPrice: Number(sellPrice), 
+        stockQty: Number(stockQty) || 0, 
+        unit, 
+        isPackaged: Boolean(isPackaged),
+        packageUnit: packageUnit || null,
+        qtyPerPackage: qtyPerPackage ? Number(qtyPerPackage) : null,
+        userId: req.shopOwnerId
       }
     });
     res.status(201).json({ success: true, message: "Samaan add ho gaya!", data: newProduct });

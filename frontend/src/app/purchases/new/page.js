@@ -27,8 +27,27 @@ export default function NewPurchase() {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({
-    name: "", brand: "", category: "Fertilizer", buyPrice: "", sellPrice: "", unit: "KG"
+    name: "", brand: "", category: "Fertilizer", 
+    measureType: "loose", // 'loose' (Khulla) ya 'packaged' (Bag/Peti)
+    baseUnit: "KG",       // KG, Ltr, Pcs
+    packageUnit: "Bag",   // Bag, Box
+    qtyPerPackage: "",    // e.g., 50
+    packBuyPrice: "",     // Poore Bag ka Buy Rate
+    packSellPrice: "",    // Poore Bag ka Sell Rate
+    buyPrice: "",         // Per KG Buy Rate
+    sellPrice: ""         // Per KG Sell Rate
   });
+
+  // Auto Calculate Logic
+  useEffect(() => {
+    if (newProduct.measureType === "packaged" && newProduct.qtyPerPackage > 0) {
+      setNewProduct(prev => ({
+        ...prev,
+        buyPrice: prev.packBuyPrice ? (Number(prev.packBuyPrice) / Number(prev.qtyPerPackage)).toFixed(2) : "",
+        sellPrice: prev.packSellPrice ? (Number(prev.packSellPrice) / Number(prev.qtyPerPackage)).toFixed(2) : ""
+      }));
+    }
+  }, [newProduct.packBuyPrice, newProduct.packSellPrice, newProduct.qtyPerPackage, newProduct.measureType]);
 
   // ─── INITIAL DATA FETCH ───
   useEffect(() => {
@@ -57,28 +76,55 @@ export default function NewPurchase() {
     (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // ─── CART LOGIC ───
+  /// ─── SMART CART LOGIC (Unit Conversion) ───
+  const getMultiplier = (unit) => {
+    if (unit === "Gram" || unit === "ml") return 0.001;
+    if (unit === "Quintal") return 100;
+    if (unit === "Ton") return 1000;
+    return 1; // Default for KG, Litre, Pcs, Bag etc.
+  };
+
   const addToCart = (product) => {
     const exists = cart.find(item => item.productId === product.id);
     if (exists) {
+      // Pehle se hai toh sirf visual quantity (+1) badha kar total base calculate karo
+      const newEnteredQty = Number(exists.enteredQty) + 1;
+      const newBaseQty = newEnteredQty * getMultiplier(exists.enteredUnit);
       setCart(cart.map(item => 
-        item.productId === product.id ? { ...item, qty: item.qty + 1 } : item
+        item.productId === product.id ? { ...item, enteredQty: newEnteredQty, qty: newBaseQty } : item
       ));
     } else {
+      const defaultUnit = product.unit || "Pcs";
       setCart([{ 
         productId: product.id, 
         name: product.name, 
-        unit: product.unit,
-        qty: 1, 
+        baseUnit: defaultUnit, // Asli dukaan ka unit
+        enteredQty: 1,         // Input box mein dikhne wali unit
+        enteredUnit: defaultUnit, // Dropdown mein dikhne wali unit
+        qty: 1 * getMultiplier(defaultUnit), // Backend ke liye base qty
         buyPrice: product.buyPrice || 0 
       }, ...cart]); 
     }
   };
 
   const updateCartItem = (productId, field, value) => {
-    setCart(cart.map(item => 
-      item.productId === productId ? { ...item, [field]: Number(value) } : item
-    ));
+    setCart(cart.map(item => {
+      if (item.productId === productId) {
+        let updatedItem = { ...item };
+        
+        if (field === 'qty') {
+          updatedItem.enteredQty = value === "" ? "" : Number(value);
+          updatedItem.qty = Number(updatedItem.enteredQty) * getMultiplier(updatedItem.enteredUnit);
+        } else if (field === 'unit') {
+          updatedItem.enteredUnit = value;
+          updatedItem.qty = Number(updatedItem.enteredQty) * getMultiplier(value);
+        } else {
+          updatedItem[field] = Number(value);
+        }
+        return updatedItem;
+      }
+      return item;
+    }));
   };
 
   const removeFromCart = (productId) => {
@@ -98,11 +144,16 @@ export default function NewPurchase() {
       const token = Cookies.get("auth_token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const payload = { 
-        ...newProduct, 
-        buyPrice: Number(newProduct.buyPrice) || 0,
-        sellPrice: Number(newProduct.sellPrice),
-        stockQty: 0 
+      const payload = {
+        supplierId: selectedSupplier,
+        paidAmount: Number(paidAmount) || 0,
+        items: cart.map(item => ({
+          productId: item.productId,
+          qty: Number(item.qty),                 // Asli Stock Addition (e.g. 1000 for 1 Ton)
+          buyPrice: Number(item.buyPrice),       // Base Price (e.g. per KG)
+          enteredQty: Number(item.enteredQty),   // Bill Print (e.g. 1)
+          enteredUnit: item.enteredUnit          // Bill Print (e.g. Ton)
+        }))
       };
       
       const res = await axios.post("https://agrovault.onrender.com/api/products", payload, config);
@@ -255,13 +306,43 @@ export default function NewPurchase() {
                   </button>
                   
                   <div className="grid grid-cols-2 gap-4">
+                    {/* ─── SMART MEASUREMENT INPUT ─── */}
                     <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Qty ({item.unit})</label>
-                      <input 
-                        type="number" min="1" value={item.qty} 
-                        onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value)}
-                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-black text-gray-900 focus:outline-none focus:border-purple-500 focus:bg-white"
-                      />
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Quantity</label>
+                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500 transition-all shadow-inner">
+                        <input 
+                          type="number" min="0" step="any"
+                          value={item.enteredQty} 
+                          onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value)}
+                          className="w-16 p-2 bg-transparent text-sm font-black text-gray-900 text-center outline-none"
+                          placeholder="0"
+                        />
+                        <div className="w-px h-6 bg-gray-200"></div>
+                        <select
+                          value={item.enteredUnit}
+                          onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)}
+                          className="bg-transparent w-full text-xs font-bold text-gray-600 p-2 pr-6 outline-none cursor-pointer appearance-none relative"
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1em' }}
+                        >
+                          {(item.baseUnit === "KG" || item.baseUnit === "Gram") && (
+                            <>
+                              <option value="Gram">Gram</option>
+                              <option value="KG">Kilo (KG)</option>
+                              <option value="Quintal">Quintal</option>
+                              <option value="Ton">Ton</option>
+                            </>
+                          )}
+                          {(item.baseUnit === "Ltr" || item.baseUnit === "ml") && (
+                            <>
+                              <option value="ml">ML</option>
+                              <option value="Ltr">Litre</option>
+                            </>
+                          )}
+                          {!["KG", "Gram", "Ltr", "ml"].includes(item.baseUnit) && (
+                            <option value={item.baseUnit}>{item.baseUnit}</option>
+                          )}
+                        </select>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1.5">Buying Price (₹)</label>
@@ -332,91 +413,128 @@ export default function NewPurchase() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateProduct} className="p-4 md:p-6 overflow-y-auto flex-1 pb-24 md:pb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-4 md:mb-6">
-                
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setIsAddingProduct(true);
+              try {
+                const token = Cookies.get("auth_token");
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+                const payload = { 
+                  ...newProduct, 
+                  unit: newProduct.baseUnit,
+                  isPackaged: newProduct.measureType === "packaged",
+                  buyPrice: Number(newProduct.buyPrice) || 0,
+                  sellPrice: Number(newProduct.sellPrice),
+                  stockQty: 0 
+                };
+                const res = await axios.post("https://agrovault.onrender.com/api/products", payload, config);
+                const createdProd = res.data.data;
+                setProducts([createdProd, ...products]);
+                addToCart(createdProd);
+                setShowAddProductModal(false);
+              } catch (error) { alert("Error creating product"); } 
+              finally { setIsAddingProduct(false); }
+            }} className="p-4 md:p-6 overflow-y-auto flex-1 pb-24 md:pb-6">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-6">
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1">Product Name *</label>
-                  <input 
-                    type="text" placeholder="e.g., Super DAP 50kg" required
-                    value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
-                  />
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Product Name *</label>
+                  <input type="text" placeholder="e.g., Super DAP 50kg" required value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-indigo-500" />
                 </div>
-
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1">Brand / Company</label>
-                  <input 
-                    type="text" placeholder="e.g., IFFCO" 
-                    value={newProduct.brand} onChange={(e) => setNewProduct({...newProduct, brand: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
-                  />
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Brand / Company</label>
+                  <input type="text" placeholder="e.g., IFFCO" value={newProduct.brand} onChange={(e) => setNewProduct({...newProduct, brand: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-indigo-500" />
                 </div>
-
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1">Category</label>
-                  <select 
-                    value={newProduct.category} onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none cursor-pointer"
-                  >
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Category</label>
+                  <select value={newProduct.category} onChange={(e) => setNewProduct({...newProduct, category: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-indigo-500 appearance-none">
                     <option value="Fertilizer">Fertilizer (Khaad)</option>
                     <option value="Pesticide">Pesticide (Dawai)</option>
                     <option value="Seed">Seeds (Beej)</option>
-                    <option value="Tool">Hardware & Tools</option>
-                    <option value="Other">Other Category</option>
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1">Expected Buying Price (₹)</label>
-                  <input 
-                    type="number" placeholder="0" 
-                    value={newProduct.buyPrice} onChange={(e) => setNewProduct({...newProduct, buyPrice: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-black text-gray-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
-                  />
-                </div>
+                {/* ─── MEASUREMENT TYPE SELECTOR ─── */}
+                <div className="md:col-span-2 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+                  <label className="block text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-3">Measurement & Pricing Style</label>
+                  <div className="flex gap-4 mb-4">
+                    <label className="flex items-center gap-2 cursor-pointer font-bold text-sm text-gray-700">
+                      <input type="radio" name="measureType" value="loose" checked={newProduct.measureType === "loose"} onChange={() => setNewProduct({...newProduct, measureType: "loose"})} className="w-4 h-4 text-indigo-600 focus:ring-indigo-500" /> 
+                      Khulla Samaan (Loose / Per KG)
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer font-bold text-sm text-gray-700">
+                      <input type="radio" name="measureType" value="packaged" checked={newProduct.measureType === "packaged"} onChange={() => setNewProduct({...newProduct, measureType: "packaged"})} className="w-4 h-4 text-indigo-600 focus:ring-indigo-500" /> 
+                      Packaged Samaan (Bag / Box)
+                    </label>
+                  </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 px-1">Customer Selling Price (₹) *</label>
-                  <input 
-                    type="number" placeholder="0" required
-                    value={newProduct.sellPrice} onChange={(e) => setNewProduct({...newProduct, sellPrice: e.target.value})}
-                    className="w-full px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-xl font-black text-indigo-700 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
-                  />
-                </div>
+                  {/* LOOSE PRICING */}
+                  {newProduct.measureType === "loose" && (
+                    <div className="grid grid-cols-3 gap-3 animate-in fade-in duration-300">
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Base Unit</label>
+                        <select value={newProduct.baseUnit} onChange={(e) => setNewProduct({...newProduct, baseUnit: e.target.value})} className="w-full p-3 border rounded-xl font-bold text-sm">
+                          <option value="KG">KG</option><option value="Ltr">Litre</option><option value="Pcs">Piece</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Buy Price (Per {newProduct.baseUnit})</label>
+                        <input type="number" placeholder="0" value={newProduct.buyPrice} onChange={(e) => setNewProduct({...newProduct, buyPrice: e.target.value})} className="w-full p-3 border rounded-xl font-bold text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-indigo-500 uppercase mb-1">Sell Price (Per {newProduct.baseUnit})</label>
+                        <input type="number" placeholder="0" required value={newProduct.sellPrice} onChange={(e) => setNewProduct({...newProduct, sellPrice: e.target.value})} className="w-full p-3 border border-indigo-200 bg-indigo-50 rounded-xl font-bold text-indigo-700 text-sm" />
+                      </div>
+                    </div>
+                  )}
 
-                <div className="md:col-span-2">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1">Measurement Unit</label>
-                  <select 
-                    value={newProduct.unit} onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="KG">Kilo (KG)</option>
-                    <option value="Gram">Gram (g)</option>
-                    <option value="Ltr">Litre (L)</option>
-                    <option value="ml">Millilitre (ml)</option>
-                    <option value="Pcs">Piece (Pcs)</option>
-                    <option value="Bag">Bora / Bag</option>
-                    <option value="Box">Peti / Box</option>
-                    <option value="Quintal">Quintal</option>
-                    <option value="Ton">Ton</option>
-                  </select>
-                </div>
+                  {/* PACKAGED PRICING (SMART AUTO CALCULATION) */}
+                  {newProduct.measureType === "packaged" && (
+                    <div className="space-y-4 animate-in fade-in duration-300">
+                      <div className="grid grid-cols-3 gap-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                        <div>
+                          <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Package</label>
+                          <select value={newProduct.packageUnit} onChange={(e) => setNewProduct({...newProduct, packageUnit: e.target.value})} className="w-full p-2 border rounded-lg font-bold text-sm">
+                            <option value="Bag">Bag (Bora)</option><option value="Box">Box (Peti)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Weight Inside</label>
+                          <input type="number" placeholder="e.g. 50" required value={newProduct.qtyPerPackage} onChange={(e) => setNewProduct({...newProduct, qtyPerPackage: e.target.value})} className="w-full p-2 border rounded-lg font-bold text-sm text-center" />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Unit Inside</label>
+                          <select value={newProduct.baseUnit} onChange={(e) => setNewProduct({...newProduct, baseUnit: e.target.value})} className="w-full p-2 border rounded-lg font-bold text-sm">
+                            <option value="KG">KG</option><option value="Ltr">Litre</option>
+                          </select>
+                        </div>
+                      </div>
 
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-3 rounded-xl border border-gray-200">
+                          <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">1 {newProduct.packageUnit} Buy Price</label>
+                          <input type="number" placeholder={`₹ Rate per ${newProduct.packageUnit}`} value={newProduct.packBuyPrice} onChange={(e) => setNewProduct({...newProduct, packBuyPrice: e.target.value})} className="w-full p-2 border rounded-lg font-black text-gray-800 text-sm mb-2" />
+                          <div className="text-[10px] font-bold text-gray-500 bg-gray-50 p-1.5 rounded text-center">
+                            = ₹{newProduct.buyPrice || 0} per {newProduct.baseUnit}
+                          </div>
+                        </div>
+                        <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-200">
+                          <label className="block text-[10px] font-black text-indigo-500 uppercase mb-2">1 {newProduct.packageUnit} Sell Price *</label>
+                          <input type="number" placeholder={`₹ Rate per ${newProduct.packageUnit}`} required value={newProduct.packSellPrice} onChange={(e) => setNewProduct({...newProduct, packSellPrice: e.target.value})} className="w-full p-2 border border-indigo-200 rounded-lg font-black text-indigo-700 text-sm mb-2" />
+                          <div className="text-[10px] font-bold text-indigo-600 bg-white p-1.5 rounded border border-indigo-100 text-center">
+                            = ₹{newProduct.sellPrice || 0} per {newProduct.baseUnit}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="pt-3 flex gap-3">
-                <button 
-                  type="button" onClick={() => setShowAddProductModal(false)}
-                  className="flex-1 py-4 font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" disabled={isAddingProduct}
-                  className="flex-[2] py-4 font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70"
-                >
-                  {isAddingProduct ? "Saving..." : <><CheckCircle size={20} /> Create & Add to Cart</>}
+              <div className="pt-3 flex gap-3 border-t border-gray-100">
+                <button type="button" onClick={() => setShowAddProductModal(false)} className="flex-1 py-4 font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100">Cancel</button>
+                <button type="submit" disabled={isAddingProduct} className="flex-[2] py-4 font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 active:scale-95 flex justify-center items-center gap-2">
+                  {isAddingProduct ? "Saving..." : <><CheckCircle size={20} /> Register & Add to Cart</>}
                 </button>
               </div>
             </form>

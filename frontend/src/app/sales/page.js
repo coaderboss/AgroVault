@@ -35,26 +35,48 @@ export default function PointOfSale() {
     fetchData();
   }, []);
 
-  // ─── CART LOGIC (With Flexible Pricing) ───
+ // ─── SMART CART LOGIC (Unit Conversion & Auto Math) ───
+  const getMultiplier = (unit) => {
+    if (unit === "Gram" || unit === "ML") return 0.001;
+    if (unit === "Quintal") return 100;
+    if (unit === "Ton") return 1000;
+    return 1; // Default for KG, Litre, Pcs, Bori etc.
+  };
+
   const addToCart = (product) => {
     if (product.stockQty <= 0) return alert("Bhaiya, yeh samaan stock mein nahi hai!");
     
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
-        if (existing.qty >= product.stockQty) return prev;
-        return prev.map((item) => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
+        // Agar pehle se hai, toh quantity 1 se badha do
+        const newEnteredQty = Number(existing.enteredQty) + 1;
+        const newBaseQty = newEnteredQty * getMultiplier(existing.enteredUnit);
+        if (newBaseQty > product.stockQty) return prev;
+        return prev.map((item) => item.id === product.id ? { ...item, enteredQty: newEnteredQty, qty: newBaseQty } : item);
       }
-      // Naya item add karte waqt uska default rate 'priceAtSale' mein daal diya
-      return [...prev, { ...product, qty: 1, priceAtSale: product.sellPrice }];
+      // Naya item aate hi uska default unit aur 1 qty set hoga
+      const defaultUnit = product.unit || "Pcs";
+      return [...prev, { 
+        ...product, 
+        enteredQty: 1, 
+        enteredUnit: defaultUnit, 
+        qty: 1 * getMultiplier(defaultUnit), // Base quantity for backend
+        priceAtSale: product.sellPrice 
+      }];
     });
   };
 
-  const updateQty = (id, delta) => {
+  const handleMeasurementChange = (id, value, type) => {
     setCart((prev) => prev.map((item) => {
       if (item.id === id) {
-        const newQty = item.qty + delta;
-        return newQty > 0 ? { ...item, qty: newQty } : item;
+        let newEnteredQty = type === "qty" ? (value === "" ? "" : Number(value)) : item.enteredQty;
+        let newEnteredUnit = type === "unit" ? value : item.enteredUnit;
+        
+        // Auto-calculate base quantity for stock & price
+        const newBaseQty = Number(newEnteredQty) * getMultiplier(newEnteredUnit);
+        
+        return { ...item, enteredQty: newEnteredQty, enteredUnit: newEnteredUnit, qty: newBaseQty };
       }
       return item;
     }));
@@ -89,9 +111,11 @@ export default function PointOfSale() {
         customerId: selectedCustomer,
         paidAmount: Number(paidAmount) || 0,
         items: cart.map(item => ({
-          productId: item.id, // <-- FIX 1: item.productId ki jagah item.id kiya
-          qty: Number(item.qty),
-          priceAtSale: Number(item.priceAtSale) // <-- FIX 2: Flexible price bheja
+          productId: item.id,
+          qty: Number(item.qty),                 // Backend calculations ke liye (e.g., 0.5)
+          priceAtSale: Number(item.priceAtSale), 
+          enteredQty: Number(item.enteredQty),   // Parchi par dikhane ke liye (e.g., 500)
+          enteredUnit: item.enteredUnit          // Parchi par dikhane ke liye (e.g., Gram)
         }))
       };
 
@@ -238,11 +262,45 @@ export default function PointOfSale() {
                     <Edit3 size={12} className="text-gray-400" />
                   </div>
                   
-                  {/* Quantity Controls */}
-                  <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-                    <button onClick={() => updateQty(item.id, -1)} className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors"><Minus size={14} /></button>
-                    <div className="px-3 text-xs font-black w-8 text-center text-gray-900">{item.qty}</div>
-                    <button onClick={() => updateQty(item.id, 1)} className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors"><Plus size={14} /></button>
+                  {/* ─── SMART MEASUREMENT INPUT (Qty + Unit Dropdown) ─── */}
+                  <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all shadow-inner">
+                    <input 
+                      type="number" 
+                      min="0"
+                      step="any"
+                      value={item.enteredQty}
+                      onChange={(e) => handleMeasurementChange(item.id, e.target.value, "qty")}
+                      className="w-16 p-2 bg-transparent text-sm font-black text-gray-900 text-center outline-none"
+                      placeholder="0"
+                    />
+                    <div className="w-px h-6 bg-gray-200"></div>
+                    <select
+                      value={item.enteredUnit}
+                      onChange={(e) => handleMeasurementChange(item.id, e.target.value, "unit")}
+                      className="bg-transparent text-xs font-bold text-gray-600 p-2 pr-6 outline-none cursor-pointer appearance-none relative"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1em' }}
+                    >
+                      {/* Agar Base Unit KG hai, toh yeh options dikhenge */}
+                      {(item.unit === "KG" || item.unit === "Gram") && (
+                        <>
+                          <option value="Gram">Gram (g)</option>
+                          <option value="KG">Kilo (KG)</option>
+                          <option value="Quintal">Quintal</option>
+                          <option value="Ton">Ton</option>
+                        </>
+                      )}
+                      {/* Agar Base Unit Litre hai */}
+                      {(item.unit === "Litre" || item.unit === "ML") && (
+                        <>
+                          <option value="ML">ML</option>
+                          <option value="Litre">Litre (L)</option>
+                        </>
+                      )}
+                      {/* Any other standard unit (Pcs, Bori, Packet) */}
+                      {(!["KG", "Gram", "Litre", "ML"].includes(item.unit)) && (
+                        <option value={item.unit}>{item.unit}</option>
+                      )}
+                    </select>
                   </div>
                 </div>
               </div>

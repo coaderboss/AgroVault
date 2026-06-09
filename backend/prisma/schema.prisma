@@ -45,19 +45,25 @@ model Customer {
   payments  Payment[]
 }
 
-// ─── PRODUCT ───
+// ─── PRODUCT (SMART INVENTORY) ───
 model Product {
   id            String         @id @default(cuid())
-  userId        String         // <-- ISOLATION TAG
+  userId        String         // <-- OWNER ki ID
   user          User           @relation(fields: [userId], references: [id])
   
   name          String   
   category      String   
   brand         String?  
   stockQty      Float    
-  unit          String   
-  buyPrice      Float    
-  sellPrice     Float    
+  
+  unit          String         // Asli base unit (KG, Ltr, Pcs)
+  isPackaged    Boolean        @default(false) // Kya yeh Bag/Box mein aata hai?
+  packageUnit   String?        // Bag, Box, Pkt
+  qtyPerPackage Float?         // 1 Bag mein kitne KG/Ltr hain? (e.g., 50)
+  
+  buyPrice      Float          // Base Price (Per KG/Ltr)
+  sellPrice     Float          // Base Price (Per KG/Ltr)
+  
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   
