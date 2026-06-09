@@ -380,7 +380,15 @@ app.post('/api/orders', auth, async (req, res) => {
           createdById: req.userId,       // Kisne becha (Employee ID)
           createdByName: req.userName,   // Kisne becha (Employee Name)
           customerId, totalAmount, paidAmount, status,
-          items: { create: items.map(item => ({ productId: item.productId, qty: item.qty, priceAtSale: item.priceAtSale })) }
+          items: { 
+            create: items.map(item => ({ 
+              productId: item.productId, 
+              qty: Number(item.qty),              // Base quantity (e.g., 0.5)
+              priceAtSale: Number(item.priceAtSale), // Price per base unit
+              enteredQty: Number(item.enteredQty || item.qty), // Receipt display
+              enteredUnit: item.enteredUnit || "Base"          // Receipt display
+            })) 
+          }
         },
         include: { items: true }
       });
@@ -589,8 +597,10 @@ app.post('/api/purchases', auth, async (req, res) => {
           items: {
             create: items.map(item => ({
               productId: item.productId,
-              qty: Number(item.qty),
-              buyPrice: Number(item.buyPrice)
+              qty: Number(item.qty),                 // Base addition
+              buyPrice: Number(item.buyPrice),       // Base price
+              enteredQty: Number(item.enteredQty || item.qty),
+              enteredUnit: item.enteredUnit || "Base"
             }))
           }
         }

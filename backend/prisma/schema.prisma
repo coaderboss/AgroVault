@@ -120,15 +120,21 @@ model Purchase {
   items       PurchaseItem[]
 }
 
-// ─── ITEMS & PAYMENTS (INKO DIRECT PARENT SE LINK KARTE HAIN) ───
+// ─── ITEMS WITH SMART MEASUREMENT (UNIT CONVERSION) ───
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String   
-  order       Order    @relation(fields: [orderId], references: [id]) 
-  productId   String   
-  product     Product  @relation(fields: [productId], references: [id]) 
-  qty         Float    
-  priceAtSale Float    
+  id            String   @id @default(cuid())
+  orderId       String   
+  order         Order    @relation(fields: [orderId], references: [id]) 
+  productId     String   
+  product       Product  @relation(fields: [productId], references: [id]) 
+  
+  // Base details (Real calculation ke liye)
+  qty           Float    // Actual Base Unit Deduction (e.g., 0.5 KG)
+  priceAtSale   Float    // Price per Base Unit
+  
+  // Tracking details (Parchi par dikhane ke liye)
+  enteredQty    Float?   @default(0)     // Jo user ne type kiya (e.g., 500)
+  enteredUnit   String?  @default("Base")// Jo unit select ki (e.g., "Gram")
 }
 
 model Payment {
@@ -148,11 +154,16 @@ model SupplierPayment {
 }
 
 model PurchaseItem {
-  id          String   @id @default(cuid())
-  purchaseId  String
-  productId   String
-  qty         Int
-  buyPrice    Float
-  purchase    Purchase @relation(fields: [purchaseId], references: [id])
-  product     Product  @relation(fields: [productId], references: [id])
+  id            String   @id @default(cuid())
+  purchaseId    String
+  productId     String
+  purchase      Purchase @relation(fields: [purchaseId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
+  
+  // Base details (Real calculation ke liye)
+  qty           Float    
+  buyPrice      Float    
+  
+  enteredQty    Float?   @default(0)     
+  enteredUnit   String?  @default("Base")
 }
