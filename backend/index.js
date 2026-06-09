@@ -40,6 +40,16 @@ const auth = (req, res, next) => {
 };
 
 
+const cors = require('cors');
+
+// Apne Vercel wale link ko allow karein (Aakhiri mein slash '/' mat lagana)
+app.use(cors({
+    origin: ['http://localhost:3000', 'https://agro-vault-theta.vercel.app'], 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
+
+
 // ==========================================
 // 0. AUTHENTICATION (REGISTER & LOGIN) APIs
 // ==========================================
