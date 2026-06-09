@@ -107,11 +107,12 @@ export default function PointOfSale() {
         customerName: customerInfo ? customerInfo.name : "Walk-in Customer",
         customerMobile: customerInfo ? customerInfo.mobile : "",
         items: cart,
-        total: subtotal, // <-- FIX 3: totalAmount ki jagah subtotal use kiya
+        total: subtotal, 
         paid: Number(paidAmount) || 0,
-        due: subtotal - (Number(paidAmount) || 0), // <-- FIX 4: Yahan bhi subtotal
+        due: subtotal - (Number(paidAmount) || 0), 
         date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-        billId: res.data.data.id.slice(-6).toUpperCase()
+        billId: res.data.data.id.slice(-6).toUpperCase(),
+        billedBy: userInfo.name || "Owner" // <-- NAYA: Parchi kisne kaati uska naam
       });
 
       // Cart saaf karna
@@ -339,8 +340,13 @@ export default function PointOfSale() {
               )}
             </div>
 
+            {/* ─── NAYA: BILLED BY (Employee Name) ─── */}
+            <div className="mt-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest border-t border-gray-100 pt-4">
+              Billed By: <span className="text-gray-700">{generatedSlip.billedBy}</span>
+            </div>
+
             {/* Actions - print:hidden lagane se yeh paper par nahi aayenge */}
-            <div className="mt-8 flex gap-3 print:hidden">
+            <div className="mt-6 flex gap-3 print:hidden">
               <button onClick={() => window.print()} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors">🖨️ Print</button>
               <button onClick={() => setGeneratedSlip(null)} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors">Done</button>
             </div>

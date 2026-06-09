@@ -19,25 +19,31 @@ const app = express();
 app.use(express.json());
 
 // ==========================================
-// 🛡️ THE BOUNCER (AUTH MIDDLEWARE)
+// 🛡️ THE BOUNCER (AUTH MIDDLEWARE) UPGRADED
 // ==========================================
-// Ye function har API se pehle check karega ki Token sahi hai ya nahi
 const auth = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: "Aapke paas chaabi nahi hai (No Token)" });
+    return res.status(401).json({ success: false, message: "No Token Found" });
   }
 
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
-    req.userId = decoded.id; // Yahan hume Dukaandaar ki ID mil gayi!
-    next(); // Gate khol do
+    
+    req.userId = decoded.id;       // Khud ki ID (Employee ya Owner)
+    req.userName = decoded.name;   // Khud ka naam
+    req.userRole = decoded.role;   // "OWNER" ya "EMPLOYEE"
+    
+    // ─── MASTER BUCKET LOGIC ───
+    // Agar login user Owner hai toh uski apni ID, agar Employee hai toh uske Owner ki ID
+    req.shopOwnerId = decoded.role === "OWNER" ? decoded.id : decoded.ownerId;
+    
+    next();
   } catch (error) {
-    return res.status(401).json({ success: false, message: "Chaabi galat hai ya expire ho chuki hai" });
+    return res.status(401).json({ success: false, message: "Invalid or Expired Token" });
   }
 };
-
 
 // Apne Vercel wale link ko allow karein (Aakhiri mein slash '/' mat lagana)
 app.use(cors({
@@ -162,7 +168,8 @@ app.post('/api/customers', auth, async (req, res) => {
   try {
     const { name, mobile, village } = req.body;
     const newCustomer = await prisma.customer.create({ 
-      data: { name, mobile, village, userId: req.userId } // Sirf is dukaandaar ke naam par save karo
+      // req.userId ki jagah req.shopOwnerId kar diya
+      data: { name, mobile, village, userId: req.shopOwnerId } 
     });
     res.status(201).json({ success: true, message: "Kisaan ka khata khul gaya!", data: newCustomer });
   } catch (error) {
@@ -173,7 +180,8 @@ app.post('/api/customers', auth, async (req, res) => {
 app.get('/api/customers', auth, async (req, res) => {
   try {
     const customers = await prisma.customer.findMany({ 
-      where: { userId: req.userId }, // Sirf apna data dikhega
+      // req.userId ki jagah req.shopOwnerId kar diya taaki sabko sabka dikhe
+      where: { userId: req.shopOwnerId }, 
       orderBy: { createdAt: 'desc' } 
     });
     res.status(200).json({ success: true, data: customers });
@@ -185,7 +193,7 @@ app.get('/api/customers', auth, async (req, res) => {
 app.get('/api/customers/:id', auth, async (req, res) => {
   try {
     const customer = await prisma.customer.findFirst({
-      where: { id: req.params.id, userId: req.userId },
+      where: { id: req.params.id, userId: req.shopOwnerId }, // <-- FIX
       include: {
         orders: {
           include: { items: { include: { product: true } } },
@@ -220,7 +228,7 @@ app.post('/api/customers/:id/bulk-pay', auth, async (req, res) => {
     if (amount <= 0) return res.status(400).json({ success: false, message: "Amount sahi nahi hai" });
 
     // Verify customer belongs to user
-    const customer = await prisma.customer.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    const customer = await prisma.customer.findFirst({ where: { id: req.params.id, userId: req.shopOwnerId } }); // <-- FIX
     if(!customer) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const pendingOrders = await prisma.order.findMany({
@@ -257,7 +265,7 @@ app.post('/api/customers/:id/bulk-pay', auth, async (req, res) => {
 
 app.get('/api/customers/:id/payments', auth, async (req, res) => {
   try {
-    const customer = await prisma.customer.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    const customer = await prisma.customer.findFirst({ where: { id: req.params.id, userId: req.shopOwnerId } }); // <-- FIX
     if(!customer) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const page = parseInt(req.query.page) || 1;
@@ -284,14 +292,14 @@ app.get('/api/customers/:id/payments', auth, async (req, res) => {
 
 
 // ==========================================
-// 2. INVENTORY (PRODUCTS) APIs
+// 2. INVENTORY (PRODUCTS) APIs (MASTER BUCKET LINKED)
 // ==========================================
 
 app.get('/api/products', auth, async (req, res) => {
   try {
     if (!req.query.page) {
       const products = await prisma.product.findMany({ 
-        where: { userId: req.userId }, 
+        where: { userId: req.shopOwnerId }, // Sabko Malik ka (dukkan ka) stock dikhega
         orderBy: { createdAt: 'desc' } 
       });
       return res.status(200).json({ success: true, data: products });
@@ -300,10 +308,10 @@ app.get('/api/products', auth, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const totalItems = await prisma.product.count({ where: { userId: req.userId } });
+    const totalItems = await prisma.product.count({ where: { userId: req.shopOwnerId } });
 
     const products = await prisma.product.findMany({
-      where: { userId: req.userId },
+      where: { userId: req.shopOwnerId }, // Dukaan ka common stock
       skip: skip,
       take: limit,
       orderBy: { createdAt: 'desc' }
@@ -326,7 +334,7 @@ app.post('/api/products', auth, async (req, res) => {
       data: { 
         name, brand: brand || "Local", category, buyPrice: Number(buyPrice), 
         sellPrice: Number(sellPrice), stockQty: Number(stockQty), unit,
-        userId: req.userId 
+        userId: req.shopOwnerId // Samaan hamesha dukkan ke khate me judega
       }
     });
     res.status(201).json({ success: true, message: "Samaan add ho gaya!", data: newProduct });
@@ -337,7 +345,7 @@ app.post('/api/products', auth, async (req, res) => {
 
 app.put('/api/products/:id', auth, async (req, res) => {
   try {
-    const product = await prisma.product.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    const product = await prisma.product.findFirst({ where: { id: req.params.id, userId: req.shopOwnerId } });
     if (!product) return res.status(404).json({ success: false, message: "Product nahi mila" });
 
     const { name, brand, category, buyPrice, sellPrice, stockQty, unit } = req.body;
@@ -368,7 +376,9 @@ app.post('/api/orders', auth, async (req, res) => {
     const result = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
-          userId: req.userId,
+          userId: req.shopOwnerId,       // Malik ke bucket mein data gaya
+          createdById: req.userId,       // Kisne becha (Employee ID)
+          createdByName: req.userName,   // Kisne becha (Employee Name)
           customerId, totalAmount, paidAmount, status,
           items: { create: items.map(item => ({ productId: item.productId, qty: item.qty, priceAtSale: item.priceAtSale })) }
         },
@@ -390,10 +400,55 @@ app.post('/api/orders', auth, async (req, res) => {
   }
 });
 
+// ─── CANCEL BILL (VOID ORDER) API ───
+app.put('/api/orders/:id/cancel', auth, async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    // Pehle bill dhoondho (Check karo ki Malik ka hi bill hai)
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, userId: req.shopOwnerId },
+      include: { items: true }
+    });
+
+    if (!order) return res.status(404).json({ success: false, message: "Bill nahi mila!" });
+    if (order.status === "CANCELLED") return res.status(400).json({ success: false, message: "Yeh bill pehle hi cancel ho chuka hai!" });
+
+    // Transaction: Bill cancel karo aur Stock wapas badao
+    await prisma.$transaction(async (tx) => {
+      // 1. Bill ka status CANCELLED karo aur amount 0 kar do taki Revenue mein na gine
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: "CANCELLED", paidAmount: 0, totalAmount: 0 } 
+      });
+
+      // 2. Jo samaan bika tha, usko wapas Inventory mein daal do
+      for (const item of order.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stockQty: { increment: item.qty } }
+        });
+      }
+    });
+
+    res.status(200).json({ success: true, message: "Bill cancel ho gaya aur stock wapas jud gaya!" });
+  } catch (error) {
+    console.error("Cancel Bill Error:", error);
+    res.status(500).json({ success: false, message: "Bill cancel karne mein error aaya" });
+  }
+});
+
 app.get('/api/udhaar', auth, async (req, res) => {
   try {
+    let queryCondition = { userId: req.shopOwnerId, OR: [{ status: "UDHAAR" }, { status: "PARTIAL" }] };
+    
+    // Agar login karne wala EMPLOYEE hai, toh use sirf uski banayi hui parchiyan dikhao
+    if (req.userRole === "EMPLOYEE") {
+      queryCondition.createdById = req.userId;
+    }
+
     const pendingOrders = await prisma.order.findMany({
-      where: { userId: req.userId, OR: [{ status: "UDHAAR" }, { status: "PARTIAL" }] },
+      where: queryCondition,
       include: { customer: true, items: { include: { product: true } } },
       orderBy: { createdAt: 'desc' }
     });
@@ -406,7 +461,7 @@ app.get('/api/udhaar', auth, async (req, res) => {
 app.put('/api/orders/:id/pay', auth, async (req, res) => {
   try {
     const { amount } = req.body;
-    const order = await prisma.order.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    const order = await prisma.order.findFirst({ where: { id: req.params.id, userId: req.shopOwnerId } }); 
     
     if (!order) return res.status(404).json({ success: false, message: "Parchi nahi mili!" });
 
@@ -426,14 +481,14 @@ app.put('/api/orders/:id/pay', auth, async (req, res) => {
 
 
 // ==========================================
-// 4. SUPPLIERS (MAHAJAN) APIs
+// 4. SUPPLIERS (MAHAJAN) APIs (MASTER BUCKET LINKED)
 // ==========================================
 
 app.post('/api/suppliers', auth, async (req, res) => {
   try {
     const { name, company, mobile, address } = req.body;
     const newSupplier = await prisma.supplier.create({ 
-      data: { name, company, mobile, address, userId: req.userId } 
+      data: { name, company, mobile, address, userId: req.shopOwnerId } // Dukkan ka Mahajan
     });
     res.status(201).json({ success: true, message: "Mahajan ka khata khul gaya!", data: newSupplier });
   } catch (error) {
@@ -444,7 +499,7 @@ app.post('/api/suppliers', auth, async (req, res) => {
 app.get('/api/suppliers', auth, async (req, res) => {
   try {
     const suppliers = await prisma.supplier.findMany({
-      where: { userId: req.userId },
+      where: { userId: req.shopOwnerId },
       include: { purchases: true, payments: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -477,7 +532,7 @@ app.get('/api/suppliers', auth, async (req, res) => {
 app.get('/api/suppliers/:id', auth, async (req, res) => {
   try {
     const supplier = await prisma.supplier.findFirst({
-      where: { id: req.params.id, userId: req.userId },
+      where: { id: req.params.id, userId: req.shopOwnerId },
       include: {
         purchases: { 
           orderBy: { createdAt: 'desc' },
@@ -491,21 +546,20 @@ app.get('/api/suppliers/:id', auth, async (req, res) => {
     res.status(200).json({ success: true, data: supplier });
     
   } catch (error) {
-    console.error(error);
     res.status(500).json({ success: false, message: "Khata load karne mein error" });
   }
 });
 
 app.post('/api/suppliers/:id/pay', auth, async (req, res) => {
   try {
-    const supplier = await prisma.supplier.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    const supplier = await prisma.supplier.findFirst({ where: { id: req.params.id, userId: req.shopOwnerId } });
     if (!supplier) return res.status(403).json({ success: false, message: "Unauthorized" });
 
     const { amount } = req.body;
     if (!amount || Number(amount) <= 0) return res.status(400).json({ success: false, message: "Sahi amount dalein" });
 
     const payment = await prisma.supplierPayment.create({
-      data: { supplierId: req.params.id, amount: Number(amount) }
+      data: { supplierId: req.params.id, amount: Number(amount) } // Tracking aage add kar sakte hain ki kisne pay kiya
     });
     res.status(200).json({ success: true, message: "Payment chuka di gayi!", data: payment });
   } catch (error) {
@@ -516,7 +570,6 @@ app.post('/api/suppliers/:id/pay', auth, async (req, res) => {
 app.post('/api/purchases', auth, async (req, res) => {
   try {
     const { supplierId, items, paidAmount } = req.body;
-    
     let totalAmount = items.reduce((acc, item) => acc + (item.qty * item.buyPrice), 0);
 
     let status = "PAID";
@@ -526,7 +579,9 @@ app.post('/api/purchases', auth, async (req, res) => {
     const result = await prisma.$transaction(async (tx) => {
       const newPurchase = await tx.purchase.create({
         data: {
-          userId: req.userId,
+          userId: req.shopOwnerId,       // Dukkan ke stock mein jayega
+          createdById: req.userId,       // Jis employee ne stock entry mari
+          createdByName: req.userName,   // Employee ka naam
           supplierId,
           totalAmount,
           paidAmount: Number(paidAmount) || 0,
@@ -561,7 +616,7 @@ app.post('/api/purchases', auth, async (req, res) => {
   }
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Engine Start! Server port ${PORT} par mast chal raha hai...`);
 });

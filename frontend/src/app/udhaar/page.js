@@ -2,8 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie"; // <-- Bouncer ki chaabi
-import { Wallet, Search, Phone, MapPin, Receipt, CheckCircle, Clock, X, Check } from "lucide-react";
-
+import { Wallet, Search, Phone, MapPin, Receipt, CheckCircle, Clock, X, Check, Trash2, User } from "lucide-react";
 export default function Ledger() {
   const [pendingOrders, setPendingOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +39,23 @@ export default function Ledger() {
     order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     order.customer.village.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleCancelBill = async (orderId) => {
+    const isConfirmed = window.confirm("Kya aap sach mein yeh bill cancel karna chahte hain? Samaan wapas stock mein chala jayega.");
+    if (!isConfirmed) return;
+
+    try {
+      const token = Cookies.get("auth_token");
+      await axios.put(`https://agrovault.onrender.com/api/orders/${orderId}/cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      alert("Bill successfully cancel ho gaya!");
+      fetchUdhaar(); // <-- FIX: Function ka sahi naam
+    } catch (error) {
+      alert(error.response?.data?.message || "Cancel karne mein error aaya");
+    }
+  };
 
   // ─── SUBMIT PAYMENT TO BACKEND (BULK PAY ENABLED) ───
   const handlePaymentSubmit = async () => {
@@ -143,9 +159,14 @@ export default function Ledger() {
                     <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-3">
                       <Receipt size={14} className="text-gray-400 md:w-4 md:h-4" />
                       <span className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest">
-                        Bill Date: {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                      {/* ─── NAYA: Employee ka naam kisne udhaar diya ─── */}
+                      <span className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[9px] md:text-[10px] font-bold text-gray-500 uppercase">
+                        <User size={10} /> {order.createdByName || 'Owner'}
                       </span>
                     </div>
+                    
                     <div className="space-y-1 md:mb-4">
                       {order.items.map(item => (
                         <div key={item.id} className="text-xs md:text-sm font-medium text-gray-700 flex justify-between">
@@ -153,7 +174,7 @@ export default function Ledger() {
                                 <span className="text-xs md:text-sm font-bold">{item.product.name}</span>
                                 <span className="text-[10px] md:text-xs text-gray-500 font-medium">{item.qty} {item.product.unit || 'Pcs'} @ ₹{item.priceAtSale}/unit</span>
                           </div>
-                                <span className="font-bold text-gray-900">₹{(item.qty * item.priceAtSale).toLocaleString('en-IN')}</span>
+                          <span className="font-bold text-gray-900">₹{(item.qty * item.priceAtSale).toLocaleString('en-IN')}</span>
                         </div>
                       ))}
                     </div>
@@ -164,12 +185,23 @@ export default function Ledger() {
                       <div className="text-[10px] md:text-xs font-bold text-gray-500">Bill: ₹{order.totalAmount} | Paid: ₹{order.paidAmount}</div>
                       <div className="text-lg md:text-2xl font-black text-rose-600 mt-0.5 md:mt-1">Due: ₹{dueAmount.toLocaleString('en-IN')}</div>
                     </div>
-                    <button 
-                      onClick={() => setPaymentModal({ isOpen: true, order: order, amountInput: dueAmount.toString() })}
-                      className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-base shadow-sm shadow-rose-600/20 transition-all active:scale-95 whitespace-nowrap"
-                    >
-                      Collect Due
-                    </button>
+                    
+                    {/* ─── BUTTONS LAYOUT FIX ─── */}
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => handleCancelBill(order.id)}
+                        className="p-2 md:p-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg md:rounded-xl transition-all shadow-sm"
+                        title="Cancel Bill"
+                      >
+                        <Trash2 size={16} className="md:w-5 md:h-5" />
+                      </button>
+                      <button 
+                        onClick={() => setPaymentModal({ isOpen: true, order: order, amountInput: dueAmount.toString() })}
+                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-base shadow-sm shadow-rose-600/20 transition-all active:scale-95 whitespace-nowrap"
+                      >
+                        Collect Due
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

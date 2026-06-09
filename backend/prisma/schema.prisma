@@ -68,13 +68,17 @@ model Product {
 // ─── ORDER (SALE BILL) ───
 model Order {
   id          String      @id @default(cuid())
-  userId      String      // <-- ISOLATION TAG
+  userId      String      // <-- Yeh hamesha OWNER ki ID rahegi (Master Bucket)
   user        User        @relation(fields: [userId], references: [id])
   
-  customerId  String?  
+  // ─── NAYE TRACKING FIELDS ───
+  createdById   String    @default("")      // Kisne bill kaata (Employee ID ya Owner ID)
+  createdByName String    @default("Owner") // Employee ka naam jo owner ko dikhega
+
+  customerId  String?   
   customer    Customer?   @relation(fields: [customerId], references: [id]) 
-  totalAmount Float    
-  paidAmount  Float    
+  totalAmount Float     
+  paidAmount  Float     
   status      String      
   items       OrderItem[] 
   createdAt   DateTime    @default(now()) 
@@ -99,9 +103,13 @@ model Supplier {
 // ─── PURCHASE (INWARD STOCK) ───
 model Purchase {
   id          String         @id @default(uuid())
-  userId      String         // <-- ISOLATION TAG
+  userId      String         // <-- OWNER ki ID (Master Bucket)
   user        User           @relation(fields: [userId], references: [id])
   
+  // ─── NAYE TRACKING FIELDS ───
+  createdById   String       @default("")
+  createdByName String       @default("Owner")
+
   supplierId  String
   supplier    Supplier       @relation(fields: [supplierId], references: [id])
   totalAmount Float          
