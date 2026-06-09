@@ -60,7 +60,7 @@ export default function Suppliers() {
   if (loading) return <div className="h-full flex items-center justify-center font-bold text-gray-500 animate-pulse">Loading Suppliers...</div>;
 
   return (
-    <div className="animate-in fade-in duration-500 max-w-5xl mx-auto h-full flex flex-col relative px-2 sm:px-4 md:px-0 pb-20 md:pb-0">
+    <div className="animate-in fade-in duration-500 max-w-5xl mx-auto flex flex-col relative px-2 sm:px-4 md:px-0 pb-28 md:pb-10">
       
       {/* ─── HEADER SECTION ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">

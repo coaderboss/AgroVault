@@ -75,8 +75,8 @@ export default function Customers() {
     );
   }
 
-  return (
-    <div className="animate-in fade-in duration-500 max-w-5xl mx-auto h-full flex flex-col relative px-2 sm:px-4 md:px-0 pb-24 md:pb-0">
+ return (
+    <div className="animate-in fade-in duration-500 max-w-5xl mx-auto flex flex-col relative px-2 sm:px-4 md:px-0 pb-28 md:pb-10">
       
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-5 md:mb-8 gap-4">
@@ -104,50 +104,47 @@ export default function Customers() {
           </button>
         </div>
       </div>
-
-      {/* CUSTOMER LIST */}
-      <div className="bg-white rounded-2xl md:rounded-3xl border border-gray-100 shadow-sm flex-1 flex flex-col overflow-hidden mb-4 md:mb-10">
+{/* CUSTOMER LIST */}
+      <div className="flex flex-col">
         {filteredCustomers.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-10 md:p-20 text-center">
-            <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-50 rounded-full flex items-center justify-center mb-3 md:mb-4">
+          <div className="text-center py-12 md:py-20 bg-white rounded-2xl md:rounded-3xl border border-gray-100 mt-2">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
               <Users size={28} className="text-gray-300 md:w-8 md:h-8" />
             </div>
             <h3 className="text-lg md:text-xl font-bold text-gray-800">No Customers Found</h3>
             <p className="text-xs md:text-sm text-gray-500 mt-1 md:mt-2">Start building your network by adding your first customer.</p>
           </div>
         ) : (
-          <div className="overflow-y-auto flex-1 p-1.5 md:p-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 p-1 md:p-3">
-              {filteredCustomers.map((customer) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mt-2">
+            {filteredCustomers.map((customer) => (
                  <div 
                   key={customer.id} 
                   onClick={() => router.push('/customers/' + customer.id)}
-                  className="group bg-white border border-gray-100 hover:border-amber-200 rounded-xl md:rounded-2xl p-3.5 md:p-5 flex items-center justify-between transition-all hover:shadow-md cursor-pointer"
+                  className="group bg-white border border-gray-200 hover:border-amber-300 rounded-2xl md:rounded-3xl p-4 md:p-5 flex items-center justify-between transition-all hover:shadow-sm cursor-pointer"
                 >
                   <div className="flex items-center gap-3 md:gap-5 overflow-hidden pr-2">
-                    <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-black text-lg md:text-xl shrink-0 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-black text-lg md:text-xl shrink-0 group-hover:bg-amber-500 group-hover:text-white transition-colors">
                       {customer.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="overflow-hidden">
-                      <div className="font-black text-base md:text-lg text-gray-900 group-hover:text-amber-700 transition-colors truncate">
+                      <div className="font-black text-lg md:text-xl text-gray-900 group-hover:text-amber-700 transition-colors truncate">
                         {customer.name}
                       </div>
-                      <div className="flex items-center gap-2 md:gap-4 mt-0.5 md:mt-1 text-[10px] md:text-xs font-bold text-gray-500">
+                      <div className="flex items-center gap-2 md:gap-4 mt-1 text-[11px] md:text-xs font-bold text-gray-500">
                         <div className="flex items-center gap-1 shrink-0 truncate">
-                          <MapPin size={12} className="text-gray-400 md:w-[14px] md:h-[14px]" /> <span className="truncate">{customer.village}</span>
+                          <MapPin size={14} className="text-gray-400 md:w-[14px] md:h-[14px]" /> <span className="truncate">{customer.village}</span>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          <Phone size={12} className="text-gray-400 md:w-[14px] md:h-[14px]" /> {customer.mobile}
+                          <Phone size={14} className="text-gray-400 md:w-[14px] md:h-[14px]" /> {customer.mobile}
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="w-8 h-8 md:w-10 md:h-10 shrink-0 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors">
-                    <ChevronRight size={16} className="md:w-5 md:h-5" />
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors">
+                    <ChevronRight size={18} className="md:w-5 md:h-5" />
                   </div>
                 </div>
               ))}
-            </div>
           </div>
         )}
       </div>
