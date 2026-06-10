@@ -17,9 +17,12 @@ model User {
   role      String   @default("OWNER") // "OWNER" ya "EMPLOYEE"
   shopKey   String?  @unique           // Malik ki secret chaabi (e.g., AGRO-A1B2)
   ownerId   String?                    // Agar ye employee hai, toh uske malik ki ID
+  status    String    @default("ACTIVE")
 
   owner     User?    @relation("ShopStaff", fields: [ownerId], references: [id])
   employees User[]   @relation("ShopStaff")
+  securityQuestion String?   // Jaise: "Aapke bachpan ke dost ka naam?"
+  securityAnswer   String?   // Jawab (hamesha lowercase mein save karenge)
 
   customers Customer[]
   products  Product[]
@@ -69,6 +72,7 @@ model Product {
   
   orderItems    OrderItem[] 
   purchaseItems PurchaseItem[]
+  salesReturnItems SalesReturnItem[]
 }
 
 // ─── ORDER (SALE BILL) ───
@@ -89,6 +93,7 @@ model Order {
   items       OrderItem[] 
   createdAt   DateTime    @default(now()) 
   updatedAt   DateTime    @updatedAt
+  returns    SalesReturn[]
 }
 
 // ─── SUPPLIER ───
@@ -172,4 +177,35 @@ model PurchaseItem {
   
   enteredQty    Float?   @default(0)     
   enteredUnit   String?  @default("Base")
+}
+
+// ─── NAYE MODELS: SAMAAN WAPSI (SALES RETURN) ───
+model SalesReturn {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  
+  userId        String   // Malik ki ID
+  createdById   String   // Kis employee ne wapsi li
+  createdByName String
+
+  refundAmount  Float    // Kitne paise wapas kiye ya udhaar se kate
+  reason        String?  // Wapsi ka kaaran
+  createdAt     DateTime @default(now())
+
+  items         SalesReturnItem[]
+}
+
+model SalesReturnItem {
+  id            String   @id @default(cuid())
+  returnId      String
+  returnRecord  SalesReturn @relation(fields: [returnId], references: [id])
+  
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  
+  qty           Float    // Base quantity wapas aayi (e.g., KG mein)
+  returnPrice   Float    // Jis rate par wapas liya
+  enteredQty    Float?   // Parchi par dikhne wali unit (e.g., 2 Bag)
+  enteredUnit   String?
 }

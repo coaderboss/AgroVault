@@ -503,6 +503,78 @@ app.put('/api/orders/:id/pay', auth, async (req, res) => {
   }
 });
 
+// ─── SAMAAN WAPSI (SALES RETURN) API ───
+app.post('/api/returns', auth, async (req, res) => {
+  try {
+    const { orderId, returnItems, refundAmount, reason } = req.body;
+
+    // Pehle Parchi dhoondho
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, userId: req.shopOwnerId }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Original Parchi nahi mili!" });
+    }
+
+    // Transaction start: Return record banao, Stock badhao, Order ka hisaab update karo
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Wapsi ka record banao
+      const returnRecord = await tx.salesReturn.create({
+        data: {
+          orderId,
+          userId: req.shopOwnerId,
+          createdById: req.userId,
+          createdByName: req.userName,
+          refundAmount: Number(refundAmount) || 0,
+          reason: reason || "Customer Return",
+          items: {
+            create: returnItems.map(item => ({
+              productId: item.productId,
+              qty: Number(item.qty),
+              returnPrice: Number(item.returnPrice),
+              enteredQty: Number(item.enteredQty),
+              enteredUnit: item.enteredUnit
+            }))
+          }
+        }
+      });
+
+      // 2. Stock wapas Inventory mein jodo
+      for (const item of returnItems) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stockQty: { increment: Number(item.qty) } }
+        });
+      }
+
+      // 3. Parchi ka Bill Amount aur Paid Amount kam karo
+      // Agar 500 ka bill tha aur 100 ka samaan wapas aaya, toh naya bill 400 ka hoga
+      const newTotalAmount = Math.max(0, order.totalAmount - Number(refundAmount));
+      // Assume karte hain ki wapsi ka paisa humne udhaar se kaata hai ya cash wapas kiya hai
+      const newPaidAmount = Math.max(0, order.paidAmount - Number(refundAmount));
+      
+      let newStatus = order.status;
+      if (newPaidAmount >= newTotalAmount && newTotalAmount > 0) newStatus = "PAID";
+      else if (newPaidAmount === 0 && newTotalAmount > 0) newStatus = "UDHAAR";
+      else if (newTotalAmount === 0) newStatus = "CANCELLED"; // Poora samaan wapas
+      else newStatus = "PARTIAL";
+
+      await tx.order.update({
+        where: { id: orderId },
+        data: { totalAmount: newTotalAmount, paidAmount: newPaidAmount, status: newStatus }
+      });
+
+      return returnRecord;
+    });
+
+    res.status(200).json({ success: true, message: "Samaan wapsi successfully record ho gayi aur stock update ho gaya!", data: result });
+  } catch (error) {
+    console.error("Sales Return Error:", error);
+    res.status(500).json({ success: false, message: "Samaan wapsi record karne mein error aaya." });
+  }
+});
+
 
 // ==========================================
 // 4. SUPPLIERS (MAHAJAN) APIs (MASTER BUCKET LINKED)
@@ -639,6 +711,183 @@ app.post('/api/purchases', auth, async (req, res) => {
   } catch (error) {
     console.error("Purchase API Error:", error);
     res.status(500).json({ success: false, message: "Failed to record purchase" });
+  }
+});
+
+// ─── USER SETTINGS UPDATE API ───
+app.put('/api/settings/update', auth, async (req, res) => {
+  try {
+    const { role, securityQuestion, securityAnswer } = req.body;
+    
+    // Answer ko hamesha chhote aksharon (lowercase) aur bina extra space ke save karenge
+    // taaki baad mein match karne mein dikkat na ho
+    const cleanAnswer = securityAnswer ? securityAnswer.trim().toLowerCase() : null;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.userId },
+      data: { 
+        role: role || undefined,
+        securityQuestion: securityQuestion || undefined,
+        securityAnswer: cleanAnswer || undefined
+      }
+    });
+
+    res.status(200).json({ success: true, message: "Settings successfully update ho gayi!" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Settings save karne mein dikkat aayi." });
+  }
+});
+
+// ─── SECURE FORGOT PASSWORD API ───
+app.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { phone, securityAnswer, newPassword } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { phone } });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Yeh mobile number system mein nahi hai." });
+    }
+
+    if (!user.securityQuestion || !user.securityAnswer) {
+      return res.status(400).json({ success: false, message: "Aapne Security Question set nahi kiya tha. Kripya apne malik ya admin se contact karein." });
+    }
+
+    // User ke dale gaye jawab ko clean karke match karna
+    const cleanInputAnswer = securityAnswer.trim().toLowerCase();
+    if (cleanInputAnswer !== user.securityAnswer) {
+      return res.status(400).json({ success: false, message: "Security answer galat hai! Koshish wapas karein." });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: "Password kam se kam 6 characters ka hona chahiye." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { phone },
+      data: { password: hashedPassword }
+    });
+
+    res.status(200).json({ success: true, message: "Security check pass! Password badal gaya hai." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Password reset karne mein error aaya!" });
+  }
+});
+
+// ─── ACCOUNT DELETION API ───
+app.delete('/api/account/delete', auth, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+
+    if (user.role === "EMPLOYEE") {
+      // Agar staff hai, toh sirf uska account delete karo. Dukaan safe rahegi.
+      await prisma.user.delete({ where: { id: req.userId } });
+      return res.status(200).json({ success: true, message: "Aapka Employee account delete ho gaya hai." });
+    } 
+    
+    if (user.role === "OWNER") {
+      // Agar Malik delete kar raha hai, toh poori dukaan ka safaya hoga (Transaction ke saath)
+      await prisma.$transaction([
+        prisma.orderItem.deleteMany({ where: { order: { userId: req.userId } } }),
+        prisma.order.deleteMany({ where: { userId: req.userId } }),
+        prisma.purchaseItem.deleteMany({ where: { purchase: { userId: req.userId } } }),
+        prisma.purchase.deleteMany({ where: { userId: req.userId } }),
+        prisma.product.deleteMany({ where: { userId: req.userId } }),
+        prisma.customer.deleteMany({ where: { userId: req.userId } }),
+        prisma.supplier.deleteMany({ where: { userId: req.userId } }),
+        prisma.user.deleteMany({ where: { shopKey: user.shopKey } }), // Saare employees bhi out
+        prisma.user.delete({ where: { id: req.userId } }) // Aakhir mein malik delete
+      ]);
+      return res.status(200).json({ success: true, message: "Aapki dukaan ka poora data aur account delete ho gaya hai." });
+    }
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Account delete karne mein bhari error aaya." });
+  }
+});
+
+// ==========================================
+// 🛡️ SUPER ADMIN (OVERSEER) APIs
+// ==========================================
+const SUPER_ADMIN_PASS = process.env.SUPER_ADMIN_PASS || "AgroGodMode123";
+
+// 1. Admin Login Endpoint
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (password === SUPER_ADMIN_PASS) {
+    // Admin ke liye special token (24 ghante ke liye)
+    const adminToken = jwt.sign({ role: "SUPER_ADMIN" }, SECRET_KEY, { expiresIn: '24h' });
+    return res.status(200).json({ success: true, token: adminToken });
+  }
+  return res.status(401).json({ success: false, message: "Intruder Alert! Access Denied." });
+});
+
+// Admin Middleware (Checking if token belongs to Super Admin)
+const adminAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ success: false, message: "No Token" });
+  
+  try {
+    const decoded = jwt.verify(authHeader.split(' ')[1], SECRET_KEY);
+    if (decoded.role !== "SUPER_ADMIN") throw new Error("Not Admin");
+    next();
+  } catch (err) {
+    res.status(403).json({ success: false, message: "Admin privileges required." });
+  }
+};
+
+// 2. Fetch All Data (Dashboard Metrics & Identity Matrix)
+app.get('/api/admin/system-data', adminAuth, async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true, phone: true, role: true, status: true, shopName: true }
+    });
+    
+    const totalOrders = await prisma.order.aggregate({ _sum: { totalAmount: true } });
+    const shops = users.filter(u => u.role === "OWNER").length;
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalUsers: users.length,
+        activeShops: shops,
+        platformVolume: totalOrders._sum.totalAmount || 0,
+        systemHealth: "99.9%"
+      },
+      users: users
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "System Data Fetch Error" });
+  }
+});
+
+// 3. User Actions (Suspend / Activate / Unlock Role)
+app.post('/api/admin/user-action', adminAuth, async (req, res) => {
+  try {
+    const { userId, action } = req.body;
+    
+    if (action === "TOGGLE_STATUS") {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      const newStatus = user.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+      await prisma.user.update({ where: { id: userId }, data: { status: newStatus } });
+      return res.status(200).json({ success: true, message: `User ${newStatus} successfully.` });
+    }
+    
+    if (action === "UNLOCK_ROLE") {
+      // Role ko khali kar diya taaki user wapas screen par edit kar sake
+      await prisma.user.update({ where: { id: userId }, data: { role: "" } });
+      return res.status(200).json({ success: true, message: "User role unlocked." });
+    }
+
+    if (action === "DELETE") {
+      await prisma.user.delete({ where: { id: userId } });
+      return res.status(200).json({ success: true, message: "User permanently deleted." });
+    }
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Action failed." });
   }
 });
 

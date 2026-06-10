@@ -35,10 +35,17 @@ export default function Ledger() {
     return total + (order.totalAmount - order.paidAmount);
   }, 0);
 
-  const filteredOrders = pendingOrders.filter(order => 
-    order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.customer.village.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // ─── SMART SEARCH ENGINE (Name, Village, or Bill No) ───
+  const filteredOrders = pendingOrders.filter(order => {
+    const searchLower = searchQuery.toLowerCase();
+    const billNo = order.id.slice(-6).toLowerCase(); // Aakhiri 6 akshar nikale
+    
+    return (
+      order.customer.name.toLowerCase().includes(searchLower) ||
+      order.customer.village.toLowerCase().includes(searchLower) ||
+      billNo.includes(searchLower) // Bill Number se search
+    );
+  });
 
   const handleCancelBill = async (orderId) => {
     const isConfirmed = window.confirm("Kya aap sach mein yeh bill cancel karna chahte hain? Samaan wapas stock mein chala jayega.");
@@ -144,7 +151,13 @@ export default function Ledger() {
                   
                   <div className="p-3.5 md:p-5 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
                     <div className="overflow-hidden pr-2">
-                      <div className="font-black text-lg md:text-xl text-gray-900 truncate">{order.customer.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-black text-lg md:text-xl text-gray-900 truncate">{order.customer.name}</div>
+                        {/* ─── NAYA: BILL NUMBER BADGE ─── */}
+                        <span className="px-1.5 py-0.5 bg-white border border-gray-200 text-gray-500 font-black text-[10px] uppercase tracking-widest rounded shadow-sm">
+                          #{order.id.slice(-6)}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-2 md:gap-4 mt-1 md:mt-2">
                         <span className="flex items-center gap-1 text-[10px] md:text-xs font-bold text-gray-500 truncate"><MapPin size={12} className="md:w-[14px] md:h-[14px] shrink-0"/> <span className="truncate">{order.customer.village}</span></span>
                         <span className="flex items-center gap-1 text-[10px] md:text-xs font-bold text-gray-500 shrink-0"><Phone size={12} className="md:w-[14px] md:h-[14px] shrink-0"/> {order.customer.mobile}</span>

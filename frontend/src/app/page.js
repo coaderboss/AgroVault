@@ -1,22 +1,26 @@
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import Cookies from "js-cookie"; // Token nikalne ke liye
+import Cookies from "js-cookie"; 
 import { 
-  TrendingUp, AlertOctagon, PackageSearch, ArrowRight,
-  Wallet, ReceiptText, UserPlus, Boxes, Store
+  TrendingUp, Wallet, Boxes, UserPlus, Store, 
+  ReceiptText, ShieldCheck, AlertCircle, ArrowUpRight, 
+  Clock, Activity, Zap, BarChart3, ArrowRight
 } from "lucide-react";
 import Link from "next/link";
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({ products: 0, customers: 0, lowStock: 0 });
+  const [stats, setStats] = useState({ 
+    products: 0, 
+    customers: 0, 
+    lowStock: 0,
+    todayRevenue: 0,
+    pendingDues: 0
+  });
   const [loading, setLoading] = useState(true);
-  
-  // 1. User ki details save karne ke liye state
-  const [userData, setUserData] = useState({ name: "User", shopName: "AgroVault Workspace" });
+  const [userData, setUserData] = useState({ name: "User", shopName: "AgroVault Workspace", role: "", shopKey: "" });
 
   useEffect(() => {
-    // 2. Page load hote hi LocalStorage se user ka data nikalo
     const storedUser = localStorage.getItem("user_info");
     if (storedUser) {
       setUserData(JSON.parse(storedUser));
@@ -24,23 +28,37 @@ export default function Dashboard() {
 
     const fetchData = async () => {
       try {
-        const token = Cookies.get("auth_token"); // Bouncer ko dikhane ke liye chaabi
-        const config = { headers: { Authorization: `Bearer ${token}` } }; // Chaabi ko envelop mein dala
+        const token = Cookies.get("auth_token"); 
+        const config = { headers: { Authorization: `Bearer ${token}` } }; 
 
-        // APIs call karte waqt config (chaabi) sath bheji
         const prodRes = await axios.get("https://agrovault.onrender.com/api/products", config);
         const custRes = await axios.get("https://agrovault.onrender.com/api/customers", config);
         
+        let ordersData = [];
+        try {
+          const ordersRes = await axios.get("https://agrovault.onrender.com/api/orders", config);
+          ordersData = ordersRes.data.data || [];
+        } catch (err) {
+          console.log("Orders API setup pending.");
+        }
+
         const lowStockItems = prodRes.data.data.filter(p => p.stockQty < 10).length;
+        const todayStr = new Date().toDateString();
+        const todayRevenueSum = ordersData
+          .filter(o => new Date(o.createdAt).toDateString() === todayStr)
+          .reduce((sum, o) => sum + (o.paidAmount || 0), 0);
+        const totalPendingDues = custRes.data.data.reduce((sum, c) => sum + (c.totalDue || 0), 0);
 
         setStats({ 
           products: prodRes.data.data.length, 
           customers: custRes.data.data.length,
-          lowStock: lowStockItems
+          lowStock: lowStockItems,
+          todayRevenue: todayRevenueSum,
+          pendingDues: totalPendingDues
         });
         setLoading(false);
       } catch (error) {
-        console.error("Data fetch error", error);
+        console.error("Dashboard sync fatal error:", error);
         setLoading(false);
       }
     };
@@ -49,113 +67,188 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <p className="text-gray-500 font-bold tracking-widest text-sm uppercase">Loading Dashboard...</p>
+      <div className="flex h-[70dvh] items-center justify-center bg-transparent">
+        <div className="relative flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-[3px] border-gray-100 border-t-gray-900 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 blur-xl bg-gray-400/20 rounded-full"></div>
+          <p className="text-gray-900 font-black tracking-widest text-[10px] uppercase z-10">Initializing Workspace...</p>
         </div>
       </div>
     );
   }
 
-  // Current Date nikalne ka formula
-  const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
   return (
-    <div className="flex flex-col gap-4 md:gap-6 animate-in fade-in duration-500 pb-28 md:pb-10">
-    
-      {/* ─── HEADER (Namaste & Shop Name) ─── */}
-      <div className="flex justify-between items-start">
-        <div>
-          {/* userInfo ki jagah userData kar diya gaya hai */}
-          <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">Namaste, {userData?.name?.split(" ")[0]?.toUpperCase() || 'USER'}!</h1>
-          
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
-            <p className="text-gray-500 font-medium flex items-center gap-2 text-sm md:text-base">
-              <Store size={16} className="text-emerald-500" /> {userData?.shopName || 'Shop'}
+    <div className="max-w-[1400px] mx-auto space-y-6 md:space-y-8 animate-in fade-in zoom-in-[0.98] duration-700 pb-28 md:pb-8">
+      
+      {/* ─── MISSING ROLE BANNER (Glassmorphic) ─── */}
+      {!userData?.role && (
+        <div className="bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 p-4 rounded-3xl flex items-start sm:items-center gap-4 shadow-[0_8px_30px_rgb(245,158,11,0.1)] transition-all max-w-4xl">
+          <div className="bg-amber-500/20 p-2.5 rounded-full shrink-0"><AlertCircle className="text-amber-600" size={20} /></div>
+          <div className="flex-1">
+            <h4 className="text-xs font-black text-amber-900 uppercase tracking-widest">Action Required</h4>
+            <p className="text-[11px] font-bold text-amber-800/80 mt-0.5 leading-relaxed">
+              Aapka system role set nahi hai. Kripya Profile Settings mein jaakar apni identity (OWNER/EMPLOYEE) verify karein taaki secure keys activate ho sakein.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ─── THE HERO BANNER (Premium Dark Gradient) ─── */}
+      <div className="relative bg-gray-900 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 overflow-hidden shadow-2xl shadow-gray-900/20 border border-gray-800 group">
+        {/* Abstract Background Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 blur-[100px] rounded-full mix-blend-screen group-hover:bg-emerald-500/30 transition-all duration-1000"></div>
+        <div className="absolute bottom-0 left-20 w-48 h-48 bg-blue-500/20 blur-[80px] rounded-full mix-blend-screen"></div>
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="bg-white/10 backdrop-blur-md border border-white/10 text-white/90 font-black text-[9px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xl">
+                <Activity size={12} className="text-emerald-400 animate-pulse"/> Live Sync Active
+              </span>
+              <span className="text-gray-400 font-bold text-xs flex items-center gap-1.5"><Clock size={12}/> {today}</span>
+            </div>
             
-            {/* ─── SHOP KEY BADGE (Sirf Owner ko dikhega) ─── */}
-            {userData?.role === "OWNER" && userData?.shopKey && (
-              <div className="bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg flex items-center gap-2 w-fit shadow-sm">
-                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Staff Key:</span>
-                <span className="font-black text-indigo-700 tracking-wider text-sm">{userData.shopKey}</span>
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight mt-2">
+              Namaste, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">{userData?.name?.split(" ")[0]?.toUpperCase() || 'USER'}</span>
+            </h1>
+
+            {/* ─── LIVE GLOWING HUD (Heads Up Display) ─── */}
+            <div className="flex items-center gap-4 mt-4 bg-white/5 backdrop-blur-md border border-white/10 p-3 rounded-2xl w-fit">
+              <div className="pr-4 border-r border-white/10">
+                <p className="text-[10px] text-emerald-400/80 font-black uppercase tracking-widest">Today's Sales</p>
+                <p className="text-xl md:text-2xl font-black text-white tracking-tight">₹{stats.todayRevenue.toLocaleString('en-IN')}</p>
               </div>
-            )}
-          </div>
-        </div>
-        <div className="text-[10px] md:text-sm font-bold text-gray-600 uppercase tracking-widest bg-gray-200/50 px-3 py-2 md:px-5 md:py-3 rounded-lg md:rounded-xl inline-block text-center shadow-sm">
-          {today}
-        </div>
-      </div>
-
-      {/* ─── COLORFUL METRICS CARDS ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        {/* GREEN CARD: Sales */}
-        <div className="bg-emerald-500 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg shadow-emerald-500/30 flex flex-col justify-between min-h-[110px] md:min-h-[160px] transform transition hover:-translate-y-1">
-          <div className="flex justify-between items-start">
-            <div className="bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl"><TrendingUp className="w-5 h-5 md:w-7 md:h-7 text-white" /></div>
-            <div className="text-emerald-100 text-[10px] md:text-xs font-bold uppercase tracking-widest">Sales</div>
-          </div>
-          <div className="mt-2 md:mt-0">
-            <div className="text-xl md:text-4xl font-black mb-0 md:mb-1">₹0</div>
-            <div className="text-[10px] md:text-sm text-emerald-100 font-medium leading-tight">Today's Revenue</div>
-          </div>
-        </div>
-
-        {/* RED CARD: Ledger/Pending */}
-        <div className="bg-rose-500 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg shadow-rose-500/30 flex flex-col justify-between min-h-[110px] md:min-h-[160px] transform transition hover:-translate-y-1">
-          <div className="flex justify-between items-start">
-            <div className="bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl"><Wallet className="w-5 h-5 md:w-7 md:h-7 text-white" /></div>
-            <div className="text-rose-100 text-[10px] md:text-xs font-bold uppercase tracking-widest">Ledger</div>
-          </div>
-          <div className="mt-2 md:mt-0">
-            <div className="text-xl md:text-4xl font-black mb-0 md:mb-1">₹0</div>
-            <div className="text-[10px] md:text-sm text-rose-100 font-medium leading-tight">Pending Dues</div>
-          </div>
-        </div>
-
-        {/* BLUE CARD: Inventory */}
-        <div className="bg-blue-600 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg shadow-blue-600/30 flex flex-col justify-between min-h-[110px] md:min-h-[160px] transform transition hover:-translate-y-1">
-          <div className="flex justify-between items-start">
-            <div className="bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl"><Boxes className="w-5 h-5 md:w-7 md:h-7 text-white" /></div>
-            <div className="text-blue-100 text-[10px] md:text-xs font-bold uppercase tracking-widest">Stock</div>
-          </div>
-          <div className="mt-2 md:mt-0">
-            <div className="text-xl md:text-4xl font-black mb-0 md:mb-1">{stats.products}</div>
-            <div className="text-[10px] md:text-sm text-blue-100 font-medium leading-tight">Total Products</div>
-          </div>
-        </div>
-
-        {/* PURPLE CARD: Alerts/Customers */}
-        <div className="bg-purple-600 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg shadow-purple-600/30 flex flex-col justify-between min-h-[110px] md:min-h-[160px] transform transition hover:-translate-y-1">
-          <div className="flex justify-between items-start">
-            <div className="bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl"><UserPlus className="w-5 h-5 md:w-7 md:h-7 text-white" /></div>
-            <div className="text-purple-100 text-[10px] md:text-xs font-bold uppercase tracking-widest">Network</div>
-          </div>
-          <div className="mt-2 md:mt-0">
-            <div className="text-xl md:text-4xl font-black mb-0 md:mb-1">{stats.customers}</div>
-            <div className="text-[10px] md:text-sm text-purple-100 font-medium leading-tight">Active Customers</div>
+              <div className="pl-2">
+                <p className="text-[10px] text-rose-400/80 font-black uppercase tracking-widest">Total Market Due</p>
+                <p className="text-xl md:text-2xl font-black text-white tracking-tight">₹{stats.pendingDues.toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3 pt-4">
+              <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/5 px-3.py-1.5 rounded-xl text-gray-300 font-bold text-sm">
+                <Store size={16} className="text-gray-400" /> {userData?.shopName || 'Business Setup Pending'}
+              </div>
+              {userData?.role === "OWNER" && userData?.shopKey && (
+                <div className="flex items-center gap-2 bg-emerald-500/10 backdrop-blur-sm border border-emerald-500/20 px-3 py-1.5 rounded-xl text-emerald-50 font-black text-xs tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                  <ShieldCheck size={16} className="text-emerald-400" /> KEY: {userData.shopKey}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ─── QUICK ACTIONS ─── */}
+      {/* ─── BENTO GRID METRICS (Neo-Glassmorphism) ─── */}
       <div>
-        <h2 className="text-xs md:text-sm font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-5">Quick Actions</h2>
-        <div className="grid grid-cols-3 gap-2 md:gap-6">
-          <Link href="/sales" className="bg-white border-2 border-emerald-100 hover:border-emerald-500 rounded-xl md:rounded-3xl p-3 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-all shadow-sm hover:shadow-md group">
-            <div className="w-10 h-10 md:w-16 md:h-16 bg-emerald-50 text-emerald-600 rounded-lg md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><ReceiptText className="w-5 h-5 md:w-8 md:h-8" strokeWidth={2.5} /></div>
-            <span className="font-bold text-gray-800 text-[10px] md:text-lg text-center leading-tight">Generate<br className="md:hidden"/> Bill</span>
+        <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-1 flex items-center gap-2">
+          <BarChart3 size={14}/> Core Analytics
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+          
+          {/* REVENUE (Span 2 on mobile) */}
+          <div className="col-span-2 lg:col-span-1 bg-white rounded-[2rem] p-5 md:p-6 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(16,185,129,0.1)] transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors"></div>
+            <div className="relative flex justify-between items-start mb-6">
+              <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:scale-110 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-all duration-300">
+                <TrendingUp size={18} className="text-gray-400 group-hover:text-emerald-600" />
+              </div>
+              <ArrowUpRight size={18} className="text-gray-300 group-hover:text-emerald-500 transition-colors"/>
+            </div>
+            <div className="relative">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Today's Revenue</p>
+              <h3 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter">₹{stats.todayRevenue.toLocaleString('en-IN')}</h3>
+            </div>
+          </div>
+
+          {/* LEDGER */}
+          <div className="col-span-2 lg:col-span-1 bg-white rounded-[2rem] p-5 md:p-6 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(244,63,94,0.1)] transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-50 rounded-full blur-2xl group-hover:bg-rose-100 transition-colors"></div>
+            <div className="relative flex justify-between items-start mb-6">
+              <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:scale-110 group-hover:bg-rose-50 group-hover:text-rose-600 transition-all duration-300">
+                <Wallet size={18} className="text-gray-400 group-hover:text-rose-600" />
+              </div>
+              <ArrowUpRight size={18} className="text-gray-300 group-hover:text-rose-500 transition-colors"/>
+            </div>
+            <div className="relative">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Market Dues</p>
+              <h3 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter">₹{stats.pendingDues.toLocaleString('en-IN')}</h3>
+            </div>
+          </div>
+
+          {/* INVENTORY */}
+          <div className="bg-white rounded-[2rem] p-5 md:p-6 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(59,130,246,0.1)] transition-all duration-300 group relative overflow-hidden flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:scale-110 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all duration-300">
+                <Boxes size={18} className="text-gray-400 group-hover:text-blue-600" />
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Products</p>
+              <div className="flex items-baseline gap-2">
+                <h3 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter">{stats.products}</h3>
+                {stats.lowStock > 0 && <span className="text-[10px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-100">{stats.lowStock} Low</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* CUSTOMERS */}
+          <div className="bg-white rounded-[2rem] p-5 md:p-6 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(168,85,247,0.1)] transition-all duration-300 group relative overflow-hidden flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:scale-110 group-hover:bg-purple-50 group-hover:text-purple-600 transition-all duration-300">
+                <UserPlus size={18} className="text-gray-400 group-hover:text-purple-600" />
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Active Network</p>
+              <h3 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter">{stats.customers}</h3>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ─── QUICK COMMAND MODULE ─── */}
+      <div className="pt-2">
+        <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-1 flex items-center gap-2">
+          <Zap size={14}/> Operations
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-5">
+          
+          <Link href="/sales" className="relative overflow-hidden bg-white border border-gray-100 rounded-[1.5rem] p-5 flex items-center justify-between group shadow-sm hover:shadow-[0_8px_30px_rgb(16,185,129,0.12)] hover:border-emerald-200 transition-all duration-300">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-50 text-gray-600 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:bg-emerald-500 group-hover:text-white group-hover:rotate-3 transition-all duration-300 shadow-sm"><ReceiptText size={20}/></div>
+              <div>
+                <h3 className="font-black text-gray-900 text-sm">Generate Bill</h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-0.5 tracking-wide">POS Terminal</p>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-emerald-50 transition-colors"><ArrowRight size={14} className="text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"/></div>
           </Link>
-          <Link href="/udhaar" className="bg-white border-2 border-rose-100 hover:border-rose-500 rounded-xl md:rounded-3xl p-3 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-all shadow-sm hover:shadow-md group">
-            <div className="w-10 h-10 md:w-16 md:h-16 bg-rose-50 text-rose-600 rounded-lg md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Wallet className="w-5 h-5 md:w-8 md:h-8" strokeWidth={2.5} /></div>
-            <span className="font-bold text-gray-800 text-[10px] md:text-lg text-center leading-tight">Collect<br className="md:hidden"/> Due</span>
+
+          <Link href="/udhaar" className="relative overflow-hidden bg-white border border-gray-100 rounded-[1.5rem] p-5 flex items-center justify-between group shadow-sm hover:shadow-[0_8px_30px_rgb(244,63,94,0.12)] hover:border-rose-200 transition-all duration-300">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-50 text-gray-600 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:bg-rose-500 group-hover:text-white group-hover:-rotate-3 transition-all duration-300 shadow-sm"><Wallet size={20}/></div>
+              <div>
+                <h3 className="font-black text-gray-900 text-sm">Collect Ledger</h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-0.5 tracking-wide">Pending Dues</p>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-rose-50 transition-colors"><ArrowRight size={14} className="text-gray-400 group-hover:text-rose-600 group-hover:translate-x-0.5 transition-all"/></div>
           </Link>
-          <Link href="/customers" className="bg-white border-2 border-purple-100 hover:border-purple-500 rounded-xl md:rounded-3xl p-3 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-all shadow-sm hover:shadow-md group">
-            <div className="w-10 h-10 md:w-16 md:h-16 bg-purple-50 text-purple-600 rounded-lg md:rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><UserPlus className="w-5 h-5 md:w-8 md:h-8" strokeWidth={2.5} /></div>
-            <span className="font-bold text-gray-800 text-[10px] md:text-lg text-center leading-tight">Add<br className="md:hidden"/> Customer</span>
+
+          <Link href="/customers" className="relative overflow-hidden bg-white border border-gray-100 rounded-[1.5rem] p-5 flex items-center justify-between group shadow-sm hover:shadow-[0_8px_30px_rgb(168,85,247,0.12)] hover:border-purple-200 transition-all duration-300">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-50 text-gray-600 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:bg-purple-500 group-hover:text-white group-hover:scale-105 transition-all duration-300 shadow-sm"><UserPlus size={20}/></div>
+              <div>
+                <h3 className="font-black text-gray-900 text-sm">Add Customer</h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-0.5 tracking-wide">Network Data</p>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-purple-50 transition-colors"><ArrowRight size={14} className="text-gray-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all"/></div>
           </Link>
+
         </div>
       </div>
 
