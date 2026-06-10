@@ -7,7 +7,7 @@ import Cookies from "js-cookie";
 import { 
   LayoutDashboard, ReceiptText, NotebookTabs, Boxes, 
   Users, Bell, Search, Truck, PackagePlus, LogOut, 
-  UserCircle, Store, Phone, X 
+  UserCircle, Store, Phone, X, Download 
 } from "lucide-react";
 
 export default function RootLayout({ children }) {
@@ -16,11 +16,37 @@ export default function RootLayout({ children }) {
   
   const [userData, setUserData] = useState({ name: "User", shopName: "AgroVault Store", phone: "", shopType: "" });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  
+  // ─── PWA INSTALL STATES ───
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user_info");
     if (storedUser) setUserData(JSON.parse(storedUser));
+
+    // ─── PWA SETUP ───
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((err) => console.log('SW registration failed', err));
+    }
+
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, [pathname]);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') setIsInstallable(false);
+    setDeferredPrompt(null);
+  };
 
   const handleLogout = () => {
     Cookies.remove("auth_token");
@@ -97,9 +123,27 @@ export default function RootLayout({ children }) {
             <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex justify-between items-center px-4 md:px-8 z-20 sticky top-0 print:hidden">
               <div className="md:hidden text-2xl font-black text-gray-900">Agro<span className="text-emerald-600">Vault</span></div>
               <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 w-96"><Search size={18} className="text-gray-400 mr-3" /><input type="text" placeholder="Search..." className="bg-transparent outline-none w-full text-sm" /></div>
-              <div className="flex items-center gap-4">
-                <button className="relative p-2.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"><Bell size={20} /><span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span></button>
-                {/* Mobile Profile Avatar */}
+              <div className="flex items-center gap-3 md:gap-4">
+                {/* ─── PWA INSTALL BUTTON ─── */}
+                {isInstallable && (
+                  <button 
+                    onClick={handleInstallClick}
+                    className="hidden md:flex items-center gap-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 hover:text-emerald-800 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border border-emerald-200 shadow-sm"
+                  >
+                    <Download size={14} /> Install App
+                  </button>
+                )}
+                
+                {isInstallable && (
+                  <button 
+                    onClick={handleInstallClick}
+                    className="md:hidden relative p-2.5 rounded-full bg-emerald-600 text-white shadow-sm shadow-emerald-600/30 active:scale-95 transition-all"
+                  >
+                    <Download size={18} />
+                  </button>
+                )}
+
+                <button className="relative p-2.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"><Bell size={20} /><span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span></button>           {/* Mobile Profile Avatar */}
                 <div onClick={() => setIsProfileOpen(true)} className="md:hidden w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold shadow-sm cursor-pointer">
                   {userData.name.charAt(0).toUpperCase()}
                 </div>
