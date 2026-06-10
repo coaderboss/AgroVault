@@ -717,24 +717,37 @@ app.post('/api/purchases', auth, async (req, res) => {
 // ─── USER SETTINGS UPDATE API ───
 app.put('/api/settings/update', auth, async (req, res) => {
   try {
-    const { role, securityQuestion, securityAnswer } = req.body;
+    const { role, shopName, securityQuestion, securityAnswer } = req.body;
     
-    // Answer ko hamesha chhote aksharon (lowercase) aur bina extra space ke save karenge
-    // taaki baad mein match karne mein dikkat na ho
     const cleanAnswer = securityAnswer ? securityAnswer.trim().toLowerCase() : null;
+
+    // ─── NAYA LOGIC: KEY GENERATION ───
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    let newShopKey = user.shopKey;
+
+    // Agar user Owner set kar raha hai aur uske paas pehle se key nahi hai
+    if (role === "OWNER" && !newShopKey) {
+      newShopKey = 'AGRO-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: req.userId },
       data: { 
         role: role || undefined,
+        shopName: shopName || undefined,
+        shopKey: newShopKey, // Nayi key save ho jayegi
         securityQuestion: securityQuestion || undefined,
         securityAnswer: cleanAnswer || undefined
       }
     });
 
-    res.status(200).json({ success: true, message: "Settings successfully update ho gayi!" });
+    res.status(200).json({ 
+      success: true, 
+      message: "Settings successfully update ho gayi!", 
+      shopKey: newShopKey // Frontend ko key wapas bhej di
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Settings save karne mein dikkat aayi." });
+    res.status(500).json({ success: false, message: "Settings save karne mein दिक्कत aayi." });
   }
 });
 
@@ -811,7 +824,7 @@ app.delete('/api/account/delete', auth, async (req, res) => {
 // ==========================================
 // 🛡️ SUPER ADMIN (OVERSEER) APIs
 // ==========================================
-const SUPER_ADMIN_PASS = process.env.SUPER_ADMIN_PASS || "AgroGodMode123";
+const SUPER_ADMIN_PASS = process.env.SUPER_ADMIN_PASS;
 
 // 1. Admin Login Endpoint
 app.post('/api/admin/login', (req, res) => {

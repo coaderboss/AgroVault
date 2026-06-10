@@ -78,15 +78,19 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // ✅ FIX: LocalState aur LocalStorage ko turant naye data se sync karo
       const updatedUser = { ...userData, ...settingsData };
+      // Backend se aayi hui nayi key profile mein update karein
+      if (res.data.shopKey) {
+        updatedUser.shopKey = res.data.shopKey;
+      }
+      
       setUserData(updatedUser);
       localStorage.setItem("user_info", JSON.stringify(updatedUser));
 
-      showPremiumAlert("success", "Settings successfully sync ho gayi hain!");
+      showPremiumAlert("success", "Settings update ho gayi hain!");
       setProfileTab("info");
     } catch (error) {
-      showPremiumAlert("error", "Settings save karne mein dikkat aayi.");
+      showPremiumAlert("error", "Settings save karne mein error aaya.");
     } finally {
       setIsSaving(false);
     }
@@ -238,19 +242,20 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
         {/* ─── PREMIUM MINIMALIST PROFILE MODAL ─── */}
         {isProfileOpen && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90dvh]">
+            {/* HEIGHT FIX: max-h-[85vh] lagaya hai */}
+            <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
               
               {/* ─── MAIN PROFILE VIEW ─── */}
               {profileTab === "info" && (
-                <div className="flex flex-col h-full">
-                  <div className="p-5 flex justify-between items-center border-b border-gray-50">
+                <div className="flex flex-col h-full overflow-hidden">
+                  <div className="p-4 md:p-5 flex justify-between items-center border-b border-gray-50 shrink-0">
                     <h3 className="font-black text-gray-800 text-sm tracking-wide">My Account</h3>
                     <button onClick={() => setIsProfileOpen(false)} className="text-gray-400 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors"><X size={18}/></button>
                   </div>
                   
-                  <div className="p-6 flex-1 overflow-y-auto">
-                    <div className="flex flex-col items-center mb-6">
-                      <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-3 shadow-sm border border-emerald-100">
+                  {/* PADDING FIX: p-5 kiya aur pb-6 lagaya */}
+                  <div className="p-5 flex-1 overflow-y-auto pb-6">
+                  <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-3 shadow-sm border border-emerald-100">
                         {userData.name.charAt(0).toUpperCase()}
                       </div>
                       <h2 className="text-xl font-black text-gray-900">{userData.name}</h2>
@@ -312,7 +317,6 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
                       </button>
                     </div>
                   </div>
-                </div>
               )}
 
               {/* ─── SETTINGS VIEW (Nested) ─── */}

@@ -95,51 +95,55 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ─── THE HERO BANNER (Premium Dark Gradient) ─── */}
-      <div className="relative bg-gray-900 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 overflow-hidden shadow-2xl shadow-gray-900/20 border border-gray-800 group">
+      {/* ─── THE HERO BANNER (Premium Dark Gradient - Mobile Optimized) ─── */}
+      <div className="relative bg-gray-900 rounded-[1.5rem] md:rounded-[2.5rem] p-5 md:p-10 overflow-hidden shadow-2xl shadow-gray-900/20 border border-gray-800 group">
         {/* Abstract Background Elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 blur-[100px] rounded-full mix-blend-screen group-hover:bg-emerald-500/30 transition-all duration-1000"></div>
-        <div className="absolute bottom-0 left-20 w-48 h-48 bg-blue-500/20 blur-[80px] rounded-full mix-blend-screen"></div>
+        <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-emerald-500/20 blur-[80px] md:blur-[100px] rounded-full mix-blend-screen group-hover:bg-emerald-500/30 transition-all duration-1000"></div>
+        <div className="absolute bottom-0 left-10 md:left-20 w-32 md:w-48 h-32 md:h-48 bg-blue-500/20 blur-[60px] md:blur-[80px] rounded-full mix-blend-screen"></div>
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <span className="bg-white/10 backdrop-blur-md border border-white/10 text-white/90 font-black text-[9px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xl">
-                <Activity size={12} className="text-emerald-400 animate-pulse"/> Live Sync Active
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-5 md:gap-6">
+          <div className="space-y-3 md:space-y-4">
+            
+            <div className="flex items-center justify-between md:justify-start gap-3">
+              <span className="bg-white/10 backdrop-blur-md border border-white/10 text-white/90 font-black text-[9px] uppercase tracking-[0.2em] px-2.5 py-1 md:px-3 md:py-1.5 rounded-full flex items-center gap-1.5 shadow-xl">
+                <Activity size={12} className="text-emerald-400 animate-pulse"/> Live Sync
               </span>
-              <span className="text-gray-400 font-bold text-xs flex items-center gap-1.5"><Clock size={12}/> {today}</span>
+              <span className="text-gray-400 font-bold text-[10px] md:text-xs flex items-center gap-1.5"><Clock size={12}/> {today}</span>
             </div>
             
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight mt-2">
+            {/* TEXT SIZE ADJUSTED FOR MOBILE */}
+            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight mt-1 md:mt-2">
               Namaste, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">{userData?.name?.split(" ")[0]?.toUpperCase() || 'USER'}</span>
             </h1>
 
-            {/* ─── LIVE GLOWING HUD (Heads Up Display) ─── */}
-            <div className="flex items-center gap-4 mt-4 bg-white/5 backdrop-blur-md border border-white/10 p-3 rounded-2xl w-fit">
-              <div className="pr-4 border-r border-white/10">
-                <p className="text-[10px] text-emerald-400/80 font-black uppercase tracking-widest">Today's Sales</p>
-                <p className="text-xl md:text-2xl font-black text-white tracking-tight">₹{stats.todayRevenue.toLocaleString('en-IN')}</p>
+            {/* ─── LIVE GLOWING HUD (Mobile Wrapped) ─── */}
+            <div className="flex items-center gap-3 md:gap-4 mt-2 md:mt-4 bg-white/5 backdrop-blur-md border border-white/10 p-3 rounded-2xl w-full sm:w-fit">
+              <div className="flex-1 sm:flex-none pr-3 md:pr-4 border-r border-white/10">
+                <p className="text-[9px] md:text-[10px] text-emerald-400/80 font-black uppercase tracking-widest">Today's Sales</p>
+                <p className="text-lg md:text-2xl font-black text-white tracking-tight">₹{stats.todayRevenue.toLocaleString('en-IN')}</p>
               </div>
-              <div className="pl-2">
-                <p className="text-[10px] text-rose-400/80 font-black uppercase tracking-widest">Total Market Due</p>
-                <p className="text-xl md:text-2xl font-black text-white tracking-tight">₹{stats.pendingDues.toLocaleString('en-IN')}</p>
+              <div className="flex-1 sm:flex-none pl-1 md:pl-2">
+                <p className="text-[9px] md:text-[10px] text-rose-400/80 font-black uppercase tracking-widest">Total Market Due</p>
+                <p className="text-lg md:text-2xl font-black text-white tracking-tight">₹{stats.pendingDues.toLocaleString('en-IN')}</p>
               </div>
             </div>
             
-            <div className="flex flex-wrap items-center gap-3 pt-4">
-              <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/5 px-3.py-1.5 rounded-xl text-gray-300 font-bold text-sm">
-                <Store size={16} className="text-gray-400" /> {userData?.shopName || 'Business Setup Pending'}
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 pt-2 md:pt-4">
+              <div className="flex items-center gap-1.5 md:gap-2 bg-white/5 backdrop-blur-sm border border-white/5 px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-xl text-gray-300 font-bold text-xs md:text-sm">
+                <Store size={14} className="text-gray-400" /> {userData?.shopName || 'Setup Business'}
               </div>
+              
+              {/* SHOP KEY RENDER (Ab Owner banne ke baad yahan pakka dikhegi) */}
               {userData?.role === "OWNER" && userData?.shopKey && (
-                <div className="flex items-center gap-2 bg-emerald-500/10 backdrop-blur-sm border border-emerald-500/20 px-3 py-1.5 rounded-xl text-emerald-50 font-black text-xs tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                  <ShieldCheck size={16} className="text-emerald-400" /> KEY: {userData.shopKey}
+                <div className="flex items-center gap-1.5 md:gap-2 bg-emerald-500/10 backdrop-blur-sm border border-emerald-500/20 px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-xl text-emerald-50 font-black text-[10px] md:text-xs tracking-widest uppercase shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                  <ShieldCheck size={14} className="text-emerald-400" /> KEY: {userData.shopKey}
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
-
+      
       {/* ─── BENTO GRID METRICS (Neo-Glassmorphism) ─── */}
       <div>
         <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-1 flex items-center gap-2">
