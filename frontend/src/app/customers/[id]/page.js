@@ -320,29 +320,32 @@ export default function CustomerProfile() {
                         </div>
                       </div>
                       
-                      {/* ─── MOBILE OPTIMIZED HORIZONTAL SCROLL ─── */}
-                      <div className="text-xs font-bold text-gray-600 space-y-2 mb-4 overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-track]:bg-gray-50">
-                        <div className="min-w-[280px]">
-                          {order.items.map(i => {
-                            const baseName = i.product ? i.product.name : 'Unknown';
-                            const displayName = i.customLabel || baseName;
-                            const displayQty = i.enteredQty || i.qty;
-                            const displayUnit = i.enteredUnit && i.enteredUnit !== "Base" ? i.enteredUnit : (i.product?.unit || "Unit");
-                            const displayRate = i.enteredPrice || i.priceAtSale;
-                            const itemTotal = i.enteredPrice ? (i.enteredQty * i.enteredPrice) : (i.qty * i.priceAtSale);
+                      {/* ─── PREMIUM HORIZONTAL CAROUSEL SLIDER ─── */}
+                      <div className="flex gap-3 overflow-x-auto pb-4 mb-3 snap-x [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
+                        {order.items.map(i => {
+                          const baseName = i.product ? i.product.name : 'Unknown';
+                          const displayName = i.customLabel || baseName;
+                          const displayQty = i.enteredQty || i.qty;
+                          const displayUnit = i.enteredUnit && i.enteredUnit !== "Base" ? i.enteredUnit : (i.product?.unit || "Unit");
+                          const displayRate = i.enteredPrice || i.priceAtSale;
+                          const itemTotal = i.enteredPrice ? (i.enteredQty * i.enteredPrice) : (i.qty * i.priceAtSale);
 
-                            return (
-                            <div key={i.id} className="flex justify-between items-center bg-gray-50/50 p-2.5 rounded-xl border border-gray-100 mb-2">
-                              <div className="flex flex-col pr-4">
-                                <span className="text-sm font-black text-gray-800 whitespace-nowrap">{displayName}</span>
-                                <span className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
-                                  {displayQty} {displayUnit} @ ₹{displayRate}
-                                </span>
+                          return (
+                          <div key={i.id} className="shrink-0 w-[200px] snap-start flex flex-col justify-between bg-white p-3 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
+                            {/* Color Accent Line */}
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-400"></div>
+                            
+                            <div className="pl-2">
+                              <div className="flex justify-between items-start gap-2 mb-2">
+                                <span className="text-sm font-black text-gray-800 line-clamp-1" title={displayName}>{displayName}</span>
+                                <span className="font-black text-gray-900 text-sm">₹{itemTotal.toLocaleString('en-IN')}</span>
                               </div>
-                              <span className="font-black text-gray-900 text-sm">₹{itemTotal.toLocaleString('en-IN')}</span>
+                              <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-gray-50 px-2 py-1.5 rounded border border-gray-100 inline-block">
+                                {displayQty} {displayUnit} <span className="text-gray-300 mx-1">|</span> Rate: ₹{displayRate}
+                              </div>
                             </div>
-                          )})}
-                        </div>
+                          </div>
+                        )})}
                       </div>
                       
                       <div className="flex justify-between text-xs font-black bg-gray-50 p-3 rounded-xl border border-gray-100">
