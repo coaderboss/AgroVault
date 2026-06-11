@@ -212,3 +212,12 @@ model SalesReturnItem {
   enteredQty    Float?   // Parchi par dikhne wali unit (e.g., 2 Bag)
   enteredUnit   String?
 }
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String   // Shop Owner ki ID (Taaki sirf apni dukaan ke alerts dikhein)
+  message     String   // Message content
+  type        String   // ALERT, ANNOUNCEMENT, TRANSACTION
+  createdBy   String   // Kisne banaya (Hari, Owner, ya System)
+  createdAt   DateTime @default(now())
+}

@@ -990,6 +990,59 @@ app.post('/api/admin/user-action', adminAuth, async (req, res) => {
   }
 });
 
+// ==========================================
+// 🔔 SMART NOTIFICATIONS SYSTEM
+// ==========================================
+
+// 1. GET: Notifications fetch karna (Aur purana kachra saaf karna)
+app.get('/api/notifications', auth, async (req, res) => {
+  try {
+    // 36 Ghante pehle ka exact time nikalo
+    const thirtySixHoursAgo = new Date(Date.now() - 36 * 60 * 60 * 1000);
+
+    // 🧹 SMART CLEANUP: Fetch karne se pehle 36 ghante purane messages UDA DO
+    await prisma.notification.deleteMany({
+      where: {
+        userId: req.shopOwnerId,
+        createdAt: { lt: thirtySixHoursAgo }
+      }
+    });
+
+    // Ab sirf fresh aur bache hue notifications database se uthao
+    const notifications = await prisma.notification.findMany({
+      where: { userId: req.shopOwnerId },
+      orderBy: { createdAt: 'desc' },
+      take: 50 // Ek baar mein 50 se zyada load mat karo (Performance ke liye)
+    });
+
+    res.status(200).json({ success: true, data: notifications });
+  } catch (error) {
+    console.error("Notification Error:", error);
+    res.status(500).json({ success: false, message: "Notifications load nahi huye" });
+  }
+});
+
+// 2. POST: Owner ya System ke through naya Announcement bhejna
+app.post('/api/notifications', auth, async (req, res) => {
+  try {
+    const { message, type } = req.body; 
+    // type = 'ALERT', 'TRANSACTION', ya 'ANNOUNCEMENT'
+
+    const newNotif = await prisma.notification.create({
+      data: {
+        userId: req.shopOwnerId,
+        message: message,
+        type: type || 'ANNOUNCEMENT',
+        createdBy: req.userName || 'System'
+      }
+    });
+
+    res.status(201).json({ success: true, data: newNotif });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Announcement send error" });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Engine Start! Server port ${PORT} par mast chal raha hai...`);
