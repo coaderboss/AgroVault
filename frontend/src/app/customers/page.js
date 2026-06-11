@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { Users, Search, UserPlus, Phone, MapPin, ChevronRight, X, Check } from "lucide-react";
+import { Users, Search, UserPlus, Phone, MapPin, ChevronRight, X, Check, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function Customers() {
@@ -15,7 +15,7 @@ export default function Customers() {
   // ─── ADD CUSTOMER MODAL STATE ───
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({ name: "", mobile: "", village: "" });
+  const [newCustomer, setNewCustomer] = useState({ name: "", mobile: "", village: "", openingBalance: "" });
 
   const fetchCustomers = async () => {
     try {
@@ -45,11 +45,14 @@ export default function Customers() {
     setIsSubmitting(true);
     try {
       const token = Cookies.get("auth_token");
-      await axios.post("https://agrovault.onrender.com/api/customers", newCustomer, {
+      await axios.post("https://agrovault.onrender.com/api/customers", {
+        ...newCustomer,
+        openingBalance: Number(newCustomer.openingBalance) || 0
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsModalOpen(false); 
-      setNewCustomer({ name: "", mobile: "", village: "" }); 
+      setNewCustomer({ name: "", mobile: "", village: "", openingBalance: "" }); 
       await fetchCustomers(); 
     } catch (error) {
       alert("Kisaan add karne mein gadbad hui!");
@@ -104,7 +107,8 @@ export default function Customers() {
           </button>
         </div>
       </div>
-{/* CUSTOMER LIST */}
+
+      {/* CUSTOMER LIST */}
       <div className="flex flex-col">
         {filteredCustomers.length === 0 ? (
           <div className="text-center py-12 md:py-20 bg-white rounded-2xl md:rounded-3xl border border-gray-100 mt-2">
@@ -189,6 +193,21 @@ export default function Customers() {
                   value={newCustomer.village} onChange={(e) => setNewCustomer({...newCustomer, village: e.target.value})}
                   className="w-full px-4 py-2.5 md:py-3 bg-gray-50 border border-gray-200 rounded-xl md:rounded-2xl font-bold text-sm md:text-base text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
                 />
+              </div>
+
+              {/* ─── NEW: OPENING BALANCE INPUT ─── */}
+              <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+                <label className="text-[10px] md:text-xs font-black text-amber-700 uppercase tracking-widest mb-1.5 md:mb-2 px-1 flex items-center gap-1.5">
+                  <Wallet size={12}/> Purana Udhaar <span className="text-gray-400 normal-case font-bold text-[10px]">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-black">₹</span>
+                  <input 
+                    type="number" placeholder="0.00" min="0" step="any"
+                    value={newCustomer.openingBalance} onChange={(e) => setNewCustomer({...newCustomer, openingBalance: e.target.value})}
+                    className="w-full pl-9 pr-4 py-2.5 md:py-3 bg-white border border-amber-200 rounded-xl font-black text-sm md:text-base text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                  />
+                </div>
               </div>
 
               <div className="pt-2 md:pt-4 flex gap-3">

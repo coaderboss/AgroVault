@@ -173,13 +173,35 @@ app.post('/api/login', async (req, res) => {
 
 app.post('/api/customers', auth, async (req, res) => {
   try {
-    const { name, mobile, village } = req.body;
-    const newCustomer = await prisma.customer.create({ 
-      // req.userId ki jagah req.shopOwnerId kar diya
-      data: { name, mobile, village, userId: req.shopOwnerId } 
+    const { name, mobile, village, openingBalance } = req.body;
+    
+    // Transaction mein chalayenge taaki Customer aur uska Udhaar dono ek sath save hon
+    const newCustomer = await prisma.$transaction(async (tx) => {
+      const customer = await tx.customer.create({ 
+        data: { name, mobile, village, userId: req.shopOwnerId } 
+      });
+
+      // Agar Purana Udhaar (Opening Balance) hai, toh ek "System Parchi" bana do
+      if (openingBalance && Number(openingBalance) > 0) {
+        await tx.order.create({
+          data: {
+            userId: req.shopOwnerId,
+            createdById: req.userId,
+            createdByName: "System",
+            customerId: customer.id,
+            totalAmount: Number(openingBalance),
+            paidAmount: 0,
+            status: "UDHAAR",
+            // Bina kisi item ke sirf pure amount ki entry
+          }
+        });
+      }
+      return customer;
     });
-    res.status(201).json({ success: true, message: "Kisaan ka khata khul gaya!", data: newCustomer });
+
+    res.status(201).json({ success: true, message: "Kisaan ka khata aur hisaab khul gaya!", data: newCustomer });
   } catch (error) {
+    console.error("Customer Creation Error:", error);
     res.status(500).json({ success: false, message: "System error" });
   }
 });
@@ -584,12 +606,35 @@ app.post('/api/returns', auth, async (req, res) => {
 
 app.post('/api/suppliers', auth, async (req, res) => {
   try {
-    const { name, company, mobile, address } = req.body;
-    const newSupplier = await prisma.supplier.create({ 
-      data: { name, company, mobile, address, userId: req.shopOwnerId } // Dukkan ka Mahajan
+    const { name, company, mobile, address, openingBalance } = req.body;
+    
+    // Transaction taaki Supplier aur uska purana bill ek sath bane
+    const newSupplier = await prisma.$transaction(async (tx) => {
+      const supplier = await tx.supplier.create({ 
+        data: { name, company, mobile, address, userId: req.shopOwnerId } 
+      });
+
+      // Agar Purana Baaki hai, toh ek "System Parchi" (Purchase) bana do
+      if (openingBalance && Number(openingBalance) > 0) {
+        await tx.purchase.create({
+          data: {
+            userId: req.shopOwnerId,
+            createdById: req.userId,
+            createdByName: "System",
+            supplierId: supplier.id,
+            totalAmount: Number(openingBalance),
+            paidAmount: 0,
+            status: "UDHAAR",
+            // Bina kisi items array ke, direct totalAmount feed kiya
+          }
+        });
+      }
+      return supplier;
     });
-    res.status(201).json({ success: true, message: "Mahajan ka khata khul gaya!", data: newSupplier });
+
+    res.status(201).json({ success: true, message: "Mahajan ka khata aur purana hisaab khul gaya!", data: newSupplier });
   } catch (error) {
+    console.error("Supplier Creation Error:", error);
     res.status(500).json({ success: false, message: "Supplier save error" });
   }
 });

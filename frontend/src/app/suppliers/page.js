@@ -39,11 +39,14 @@ export default function Suppliers() {
     setIsSubmitting(true);
     try {
       const token = Cookies.get("auth_token");
-      await axios.post("https://agrovault.onrender.com/api/suppliers", newSupplier, {
+      await axios.post("https://agrovault.onrender.com/api/suppliers", {
+        ...newSupplier,
+        openingBalance: Number(newSupplier.openingBalance) || 0 // 👈 Naya Data
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsModalOpen(false);
-      setNewSupplier({ name: "", company: "", mobile: "", address: "" });
+      setNewSupplier({ name: "", company: "", mobile: "", address: "", openingBalance: "" });
       await fetchSuppliers();
     } catch (error) {
       alert("Supplier add karne mein gadbad hui!");
@@ -168,6 +171,22 @@ export default function Suppliers() {
                 <label className="block text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 px-1">Address / City</label>
                 <input type="text" value={newSupplier.address} onChange={(e) => setNewSupplier({...newSupplier, address: e.target.value})} className="w-full px-4 py-2.5 md:py-3 bg-gray-50 border border-gray-200 rounded-xl md:rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:border-purple-500" />
               </div>
+              
+              {/* ─── NEW: OPENING BALANCE INPUT ─── */}
+              <div className="bg-purple-50 p-3 rounded-xl border border-purple-100">
+                <label className="text-[10px] md:text-xs font-black text-purple-700 uppercase tracking-widest mb-1.5 px-1 flex items-center gap-1.5">
+                  Purana Baaki <span className="text-gray-400 normal-case font-bold text-[10px]">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-black">₹</span>
+                  <input 
+                    type="number" placeholder="0.00" min="0" step="any"
+                    value={newSupplier.openingBalance} onChange={(e) => setNewSupplier({...newSupplier, openingBalance: e.target.value})}
+                    className="w-full pl-9 pr-4 py-2.5 md:py-3 bg-white border border-purple-200 rounded-xl font-black text-sm md:text-base text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  />
+                </div>
+              </div>
+
               <div className="pt-2 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 md:py-4 text-sm md:text-base font-bold text-gray-600 bg-white border border-gray-200 rounded-xl md:rounded-2xl hover:bg-gray-50">Cancel</button>
                 <button type="submit" disabled={isSubmitting} className="flex-1 py-3 md:py-4 text-sm md:text-base font-bold text-white bg-purple-600 rounded-xl md:rounded-2xl hover:bg-purple-700 flex justify-center items-center gap-2 disabled:opacity-70">
