@@ -131,7 +131,6 @@ model Purchase {
   items       PurchaseItem[]
 }
 
-// ─── ITEMS WITH SMART MEASUREMENT (UNIT CONVERSION) ───
 model OrderItem {
   id            String   @id @default(cuid())
   orderId       String   
@@ -146,6 +145,8 @@ model OrderItem {
   // Tracking details (Parchi par dikhane ke liye)
   enteredQty    Float?   @default(0)     // Jo user ne type kiya (e.g., 500)
   enteredUnit   String?  @default("Base")// Jo unit select ki (e.g., "Gram")
+  enteredPrice  Float?   // 👈 NAYA: Ek piece/bori ka sale rate
+  customLabel   String?  // 👈 NAYA: Parchi par print karne wala naam
 }
 
 model Payment {
@@ -173,10 +174,11 @@ model PurchaseItem {
   
   // Base details (Real calculation ke liye)
   qty           Float    
-  buyPrice      Float    
+  buyPrice      Float   
   
   enteredQty    Float?   @default(0)     
   enteredUnit   String?  @default("Base")
+  enteredPrice  Float?   // 👈 NAYA: Ek piece/bori ka buy rate
 }
 
 // ─── NAYE MODELS: SAMAAN WAPSI (SALES RETURN) ───

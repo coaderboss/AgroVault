@@ -399,10 +399,12 @@ app.post('/api/orders', auth, async (req, res) => {
           items: { 
             create: items.map(item => ({ 
               productId: item.productId, 
-              qty: Number(item.qty),              // Base quantity (e.g., 0.5)
+              qty: Number(item.qty),                 // Base quantity (e.g., 0.5)
               priceAtSale: Number(item.priceAtSale), // Price per base unit
-              enteredQty: Number(item.enteredQty || item.qty), // Receipt display
-              enteredUnit: item.enteredUnit || "Base"          // Receipt display
+              enteredQty: Number(item.enteredQty || item.qty), 
+              enteredUnit: item.enteredUnit || "Base",
+              enteredPrice: Number(item.enteredPrice || item.priceAtSale), // NAYA: Ek bori/packet ka rate
+              customLabel: item.customLabel || null                        // NAYA: Parchi par likha custom naam
             })) 
           }
         },
@@ -688,7 +690,8 @@ app.post('/api/purchases', auth, async (req, res) => {
               qty: Number(item.qty),                 // Base addition
               buyPrice: Number(item.buyPrice),       // Base price
               enteredQty: Number(item.enteredQty || item.qty),
-              enteredUnit: item.enteredUnit || "Base"
+              enteredUnit: item.enteredUnit || "Base",
+              enteredPrice: Number(item.enteredPrice || item.buyPrice) // NAYA: Khareedi hui bori ka rate
             }))
           }
         }
@@ -711,6 +714,43 @@ app.post('/api/purchases', auth, async (req, res) => {
   } catch (error) {
     console.error("Purchase API Error:", error);
     res.status(500).json({ success: false, message: "Failed to record purchase" });
+  }
+});
+
+// ─── CANCEL / DELETE PURCHASE BILL API ───
+app.delete('/api/purchases/:id', auth, async (req, res) => {
+  try {
+    const purchaseId = req.params.id;
+
+    // Pehle bill dhoondho (Taki confirm ho ki inhi ke godam ka bill hai)
+    const purchase = await prisma.purchase.findFirst({
+      where: { id: purchaseId, userId: req.shopOwnerId },
+      include: { items: true }
+    });
+
+    if (!purchase) return res.status(404).json({ success: false, message: "Bill nahi mila!" });
+
+    // Transaction: Bill delete karo aur Stock wapas kam karo
+    await prisma.$transaction(async (tx) => {
+      // 1. Jo stock galti se add ho gaya tha, usko wapas minus karo
+      for (const item of purchase.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stockQty: { decrement: item.qty } }
+        });
+      }
+
+      // 2. Bill ke items database se udao
+      await tx.purchaseItem.deleteMany({ where: { purchaseId } });
+
+      // 3. Main Bill udao
+      await tx.purchase.delete({ where: { id: purchaseId } });
+    });
+
+    res.status(200).json({ success: true, message: "Kharidari ka bill delete ho gaya aur stock theek ho gaya!" });
+  } catch (error) {
+    console.error("Delete Purchase Error:", error);
+    res.status(500).json({ success: false, message: "Bill delete karne mein error aaya." });
   }
 });
 
