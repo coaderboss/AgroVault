@@ -687,11 +687,12 @@ app.post('/api/purchases', auth, async (req, res) => {
           items: {
             create: items.map(item => ({
               productId: item.productId,
-              qty: Number(item.qty),                 // Base addition
-              buyPrice: Number(item.buyPrice),       // Base price
+              qty: Number(item.qty),                 
+              buyPrice: Number(item.buyPrice),       
               enteredQty: Number(item.enteredQty || item.qty),
               enteredUnit: item.enteredUnit || "Base",
-              enteredPrice: Number(item.enteredPrice || item.buyPrice) // NAYA: Khareedi hui bori ka rate
+              enteredPrice: Number(item.enteredPrice || item.buyPrice),
+              customLabel: item.customLabel || null    // 👈 YEH LINE JOD DI
             }))
           }
         }

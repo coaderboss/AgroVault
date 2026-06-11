@@ -179,6 +179,7 @@ model PurchaseItem {
   enteredQty    Float?   @default(0)     
   enteredUnit   String?  @default("Base")
   enteredPrice  Float?   // 👈 NAYA: Ek piece/bori ka buy rate
+  customLabel   String?
 }
 
 // ─── NAYE MODELS: SAMAAN WAPSI (SALES RETURN) ───
