@@ -70,6 +70,27 @@ export default function NewPurchase() {
     fetchData();
   }, []);
 
+  // ─── 1. PAGE LOAD HOTE HI PURANA DATA WAPAS LAANA ───
+  useEffect(() => {
+    const savedCart = localStorage.getItem("buy_cart");
+    const savedSupplier = localStorage.getItem("buy_supplier");
+    if (savedCart) setCart(JSON.parse(savedCart));
+    if (savedSupplier) setSelectedSupplier(savedSupplier);
+  }, []);
+
+  // ─── 2. KUCH BHI CHANGE HO TOH SAVE KARNA ───
+  useEffect(() => {
+    if (cart.length > 0) {
+      localStorage.setItem("buy_cart", JSON.stringify(cart));
+    } else {
+      localStorage.removeItem("buy_cart"); // Agar cart khali ho jaye toh storage bhi saaf
+    }
+  }, [cart]);
+
+  useEffect(() => {
+    if (selectedSupplier) localStorage.setItem("buy_supplier", selectedSupplier);
+  }, [selectedSupplier]);
+  
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -187,6 +208,14 @@ export default function NewPurchase() {
       };
 
       await axios.post("https://agrovault.onrender.com/api/purchases", payload, config);
+      
+      // ─── BILL KATNE KE BAAD KACHRA SAAF KARNA ───
+      setCart([]);
+      setPaidAmount("");
+      setSelectedSupplier("");
+      localStorage.removeItem("buy_cart");
+      localStorage.removeItem("buy_supplier");
+      
       router.push(`/suppliers/${selectedSupplier}`);
     } catch (error) {
       alert("Failed to record purchase.");

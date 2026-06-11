@@ -46,6 +46,22 @@ export default function PointOfSale() {
     };
     fetchData();
   }, []);
+   // ─── 1. PAGE LOAD HOTE HI PURANA DATA WAPAS LAANA ───
+  useEffect(() => {
+    const savedCart = localStorage.getItem("pos_cart");
+    const savedCustomer = localStorage.getItem("pos_customer");
+    if (savedCart) setCart(JSON.parse(savedCart));
+    if (savedCustomer) setSelectedCustomer(savedCustomer);
+  }, []);
+
+  // ─── 2. KUCH BHI CHANGE HO TOH SAVE KARNA ───
+  useEffect(() => {
+    if (cart.length > 0) localStorage.setItem("pos_cart", JSON.stringify(cart));
+  }, [cart]);
+
+  useEffect(() => {
+    if (selectedCustomer) localStorage.setItem("pos_customer", selectedCustomer);
+  }, [selectedCustomer]);
 
   // ─── SMART UNIT ENGINE (UNRESTRICTED) ───
   const getMultiplier = (unit, customMult) => {
@@ -136,6 +152,10 @@ export default function PointOfSale() {
         billId: res.data.data.id.slice(-6).toUpperCase(),
         billedBy: userInfo.name || "Owner"
       });
+
+      setCart([]); setPaidAmount(""); setSelectedCustomer(""); setIsCartOpen(false);
+      localStorage.removeItem("pos_cart");     // BIll katte hi purana data delete!
+      localStorage.removeItem("pos_customer");
 
       setCart([]); setPaidAmount(""); setSelectedCustomer(""); setIsCartOpen(false);
 
