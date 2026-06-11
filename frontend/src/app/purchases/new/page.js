@@ -2,10 +2,10 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie"; // Token nikalne ke liye
+import Cookies from "js-cookie";
 import { 
   ArrowLeft, Search, PackagePlus, Truck, Wallet, 
-  Trash2, CheckCircle, Plus, X, Package, Tag
+  Trash2, CheckCircle, Plus, X, Package, Tag, ShoppingCart, ChevronRight
 } from "lucide-react";
 
 export default function NewPurchase() {
@@ -23,22 +23,21 @@ export default function NewPurchase() {
   const [paidAmount, setPaidAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ─── NEW PRODUCT MODAL STATES ───
+  // ─── MOBILE CART UI STATE ───
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // ─── NEW PRODUCT MODAL STATES (Updated with Company & Custom Category) ───
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState({
-    name: "", brand: "", category: "Fertilizer", 
-    measureType: "loose", // 'loose' (Khulla) ya 'packaged' (Bag/Peti)
-    baseUnit: "KG",       // KG, Ltr, Pcs
-    packageUnit: "Bag",   // Bag, Box
-    qtyPerPackage: "",    // e.g., 50
-    packBuyPrice: "",     // Poore Bag ka Buy Rate
-    packSellPrice: "",    // Poore Bag ka Sell Rate
-    buyPrice: "",         // Per KG Buy Rate
-    sellPrice: ""         // Per KG Sell Rate
-  });
+  const baseProductState = {
+    name: "", company: "", brand: "", category: "Fertilizer", customCategory: "",
+    measureType: "loose", baseUnit: "KG", packageUnit: "Bag", 
+    qtyPerPackage: "", packBuyPrice: "", packSellPrice: "", packStock: "", 
+    buyPrice: "", sellPrice: "", stockQty: 0
+  };
+  const [newProduct, setNewProduct] = useState(baseProductState);
 
-  // Auto Calculate Logic
+  // Auto Calculate Logic for Packaged
   useEffect(() => {
     if (newProduct.measureType === "packaged" && newProduct.qtyPerPackage > 0) {
       setNewProduct(prev => ({
@@ -53,8 +52,8 @@ export default function NewPurchase() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = Cookies.get("auth_token"); // Bouncer ke liye chaabi
-        const config = { headers: { Authorization: `Bearer ${token}` } }; // Envelop tayar kiya
+        const token = Cookies.get("auth_token"); 
+        const config = { headers: { Authorization: `Bearer ${token}` } }; 
 
         const [supRes, prodRes] = await Promise.all([
           axios.get("https://agrovault.onrender.com/api/suppliers", config),
@@ -76,97 +75,86 @@ export default function NewPurchase() {
     (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  /// ─── SMART CART LOGIC (Unit Conversion) ───
-  const getMultiplier = (unit) => {
+  // ─── SMART UNIT ADDER STATES ───
+  const [activeItem, setActiveItem] = useState(null);
+  const [draftConfig, setDraftConfig] = useState({ qty: 1, unit: "KG", customMultiplier: 50, customLabel: "", price: 0 });
+
+  // ─── SMART CART LOGIC (With Bori/Bag Support) ───
+  const getMultiplier = (unit, customMult) => {
     if (unit === "Gram" || unit === "ml") return 0.001;
     if (unit === "Quintal") return 100;
     if (unit === "Ton") return 1000;
-    return 1; // Default for KG, Litre, Pcs, Bag etc.
+    if (unit === "Custom_Bag") return Number(customMult) || 1;
+    if (unit === "Dozen") return 12;
+    return 1; 
   };
 
-  const addToCart = (product) => {
-    const exists = cart.find(item => item.productId === product.id);
-    if (exists) {
-      // Pehle se hai toh sirf visual quantity (+1) badha kar total base calculate karo
-      const newEnteredQty = Number(exists.enteredQty) + 1;
-      const newBaseQty = newEnteredQty * getMultiplier(exists.enteredUnit);
-      setCart(cart.map(item => 
-        item.productId === product.id ? { ...item, enteredQty: newEnteredQty, qty: newBaseQty } : item
-      ));
-    } else {
-      const defaultUnit = product.unit || "Pcs";
-      setCart([{ 
-        productId: product.id, 
-        name: product.name, 
-        baseUnit: defaultUnit, // Asli dukaan ka unit
-        enteredQty: 1,         // Input box mein dikhne wali unit
-        enteredUnit: defaultUnit, // Dropdown mein dikhne wali unit
-        qty: 1 * getMultiplier(defaultUnit), // Backend ke liye base qty
-        buyPrice: product.buyPrice || 0 
-      }, ...cart]); 
-    }
+  const openSmartAdder = (product) => {
+    setActiveItem(product);
+    setDraftConfig({ 
+      qty: 1, 
+      unit: product.unit || "KG", 
+      customMultiplier: 50, 
+      customLabel: "", 
+      price: product.buyPrice || 0 
+    });
   };
 
-  const updateCartItem = (productId, field, value) => {
-    setCart(cart.map(item => {
-      if (item.productId === productId) {
-        let updatedItem = { ...item };
-        
-        if (field === 'qty') {
-          updatedItem.enteredQty = value === "" ? "" : Number(value);
-          updatedItem.qty = Number(updatedItem.enteredQty) * getMultiplier(updatedItem.enteredUnit);
-        } else if (field === 'unit') {
-          updatedItem.enteredUnit = value;
-          updatedItem.qty = Number(updatedItem.enteredQty) * getMultiplier(value);
-        } else {
-          updatedItem[field] = Number(value);
-        }
-        return updatedItem;
-      }
-      return item;
-    }));
+  const confirmAddToCart = () => {
+    const multiplier = getMultiplier(draftConfig.unit, draftConfig.customMultiplier);
+    const baseQty = Number(draftConfig.qty) * multiplier;
+    const displayUnit = draftConfig.unit === "Custom_Bag" ? "Bag" : draftConfig.unit;
+
+    setCart(prev => [...prev, {
+      ...activeItem,
+      productId: activeItem.id, 
+      cartId: Math.random().toString(36).substr(2, 9), 
+      enteredQty: Number(draftConfig.qty),
+      enteredUnit: displayUnit,
+      enteredPrice: Number(draftConfig.price), // 👈 NEW: Jo rate user ne type kiya (e.g. ₹120)
+      qty: baseQty, // Total KGs (e.g. 960)
+      buyPrice: Number(draftConfig.price) / multiplier, // 👈 NEW: Backend ke liye per KG rate (120/40 = ₹3)
+      customLabel: draftConfig.customLabel || activeItem.name
+    }]);
+
+    setActiveItem(null);
   };
 
-  const removeFromCart = (productId) => {
-    setCart(cart.filter(item => item.productId !== productId));
-  };
-
-  const totalAmount = cart.reduce((acc, item) => acc + (item.qty * item.buyPrice), 0);
+  const removeFromCart = (cartId) => setCart(cart.filter(item => item.cartId !== cartId));
+  const totalAmount = cart.reduce((acc, item) => acc + (item.enteredQty * item.enteredPrice), 0); // 👈 Sahi Math
   const currentDue = totalAmount - Number(paidAmount || 0);
 
   // ─── CREATE NEW PRODUCT ON THE FLY ───
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    if (!newProduct.name || !newProduct.sellPrice) return alert("Product Name and Selling Price are mandatory.");
+    if (!newProduct.name || !newProduct.sellPrice) return alert("Product Name & Selling Price mandatory.");
     
     setIsAddingProduct(true);
     try {
       const token = Cookies.get("auth_token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
+      const finalCategory = newProduct.category === "Other" ? (newProduct.customCategory || "Other") : newProduct.category;
+      const finalBrand = newProduct.company ? `${newProduct.company} | ${newProduct.brand}` : newProduct.brand;
+
       const payload = {
-        supplierId: selectedSupplier,
-        paidAmount: Number(paidAmount) || 0,
-        items: cart.map(item => ({
-          productId: item.productId,
-          qty: Number(item.qty),                 // Asli Stock Addition (e.g. 1000 for 1 Ton)
-          buyPrice: Number(item.buyPrice),       // Base Price (e.g. per KG)
-          enteredQty: Number(item.enteredQty),   // Bill Print (e.g. 1)
-          enteredUnit: item.enteredUnit          // Bill Print (e.g. Ton)
-        }))
+        name: newProduct.name, brand: finalBrand, category: finalCategory,
+        unit: newProduct.baseUnit, isPackaged: newProduct.measureType === "packaged",
+        packageUnit: newProduct.measureType === "packaged" ? newProduct.packageUnit : null,
+        qtyPerPackage: newProduct.measureType === "packaged" ? Number(newProduct.qtyPerPackage) : null,
+        buyPrice: Number(newProduct.buyPrice) || 0, sellPrice: Number(newProduct.sellPrice),
+        stockQty: 0
       };
       
       const res = await axios.post("https://agrovault.onrender.com/api/products", payload, config);
       const createdProd = res.data.data;
 
       setProducts([createdProd, ...products]);
-      addToCart(createdProd);
+      openSmartAdder(createdProd); // Seedha popup khulega
 
       setShowAddProductModal(false);
-      setNewProduct({ name: "", brand: "", category: "Fertilizer", buyPrice: "", sellPrice: "", unit: "KG" });
-
+      setNewProduct(baseProductState);
     } catch (error) {
-      console.error(error);
       alert("Failed to create new product.");
     } finally {
       setIsAddingProduct(false);
@@ -175,7 +163,7 @@ export default function NewPurchase() {
 
   // ─── SUBMIT FINAL PURCHASE ───
   const handleSubmit = async () => {
-    if (!selectedSupplier) return alert("Please select a Supplier first.");
+    if (!selectedSupplier) return alert("Select a Mahajan/Supplier first.");
     if (cart.length === 0) return alert("Purchase cart is empty.");
     if (Number(paidAmount) > totalAmount) return alert("Paid amount cannot exceed total bill.");
 
@@ -188,79 +176,83 @@ export default function NewPurchase() {
         supplierId: selectedSupplier,
         paidAmount: Number(paidAmount) || 0,
         items: cart.map(item => ({
-          productId: item.productId,
-          qty: item.qty,
-          buyPrice: item.buyPrice
+          productId: item.productId, 
+          qty: item.qty, 
+          buyPrice: item.buyPrice,
+          enteredQty: item.enteredQty,         //  Bori ki ginti bhej rahe hain
+          enteredUnit: item.enteredUnit,       //  Bori/Bag likha bhej rahe hain
+          enteredPrice: item.enteredPrice || item.buyPrice, // Bori ka rate bhej rahe hain
+          customLabel: item.customLabel        // Custom type kiya hua naam
         }))
       };
 
       await axios.post("https://agrovault.onrender.com/api/purchases", payload, config);
-      
       router.push(`/suppliers/${selectedSupplier}`);
-      
     } catch (error) {
       alert("Failed to record purchase.");
-      console.error(error);
       setIsSubmitting(false);
     }
   };
 
-  if (loading) return <div className="h-full flex items-center justify-center font-bold text-gray-500 animate-pulse">Loading Workspace...</div>;
+  if (loading) return (
+    <div className="flex h-[70vh] items-center justify-center">
+      <div className="w-10 h-10 border-4 border-gray-200 border-t-amber-500 rounded-full animate-spin"></div>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col-reverse md:flex-row gap-4 md:gap-6 animate-in fade-in duration-300 relative md:h-[calc(100vh-8rem)] pb-24 md:pb-0 px-2 sm:px-4 md:px-0">
+    <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 pb-28 lg:pb-6 relative h-[calc(100vh-80px)]">
       
-      {/* ─── LEFT PANEL: PRODUCT CATALOG ─── */}
-      <div className="flex-1 bg-white border border-gray-200 rounded-3xl shadow-sm flex flex-col overflow-hidden">
-        <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <button onClick={() => router.back()} className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition-colors shadow-sm">
-                <ArrowLeft size={18} />
-              </button>
-              <h2 className="text-xl font-black text-gray-900">Inventory Catalog</h2>
+      {/* ─── LEFT PANEL: PRODUCT CATALOG (Black & Gold Theme) ─── */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <div className="bg-[#0f0f0f] p-4 lg:p-6 rounded-[2rem] border border-[#222] shadow-xl mb-4 shrink-0 flex flex-col sm:flex-row justify-between items-center gap-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[50px] rounded-full pointer-events-none"></div>
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+              <PackagePlus className="text-amber-500" /> Restock Items
+            </h1>
+            <p className="text-[11px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Add inventory to your warehouse</p>
+          </div>
+          <div className="relative w-full sm:w-80 flex gap-2">
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" placeholder="Search products..." 
+                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-[#1a1a1a] border border-[#333] rounded-xl text-sm font-bold text-white outline-none focus:border-amber-500 transition-all placeholder-gray-500"
+              />
             </div>
-            
             <button 
               onClick={() => setShowAddProductModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95"
+              className="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-3 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
             >
-              <Plus size={16} /> <span className="hidden sm:inline">Add New Product</span>
+              <Plus size={20} className="font-black"/>
             </button>
-          </div>
-          
-          <div className="relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input 
-              type="text" placeholder="Search existing products to restock..." 
-              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all shadow-sm"
-            />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+        <div className="flex-1 overflow-y-auto pr-1 pb-20 lg:pb-0 scroll-smooth [&::-webkit-scrollbar]:hidden">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
             {filteredProducts.map(product => (
               <div 
                 key={product.id} 
-                onClick={() => addToCart(product)}
-                className="bg-white border border-gray-100 hover:border-purple-300 p-4 rounded-2xl cursor-pointer hover:shadow-md transition-all group flex flex-col h-full relative overflow-hidden"
+                onClick={() => openSmartAdder(product)}
+                className="bg-white border border-gray-100 hover:border-amber-300 p-4 lg:p-5 rounded-[1.5rem] cursor-pointer hover:shadow-lg transition-all active:scale-95 flex flex-col h-full group relative"
               >
                 <div className="flex-1">
-                  <div className="font-bold text-gray-900 text-sm leading-tight mb-1">{product.name}</div>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1 mt-1">
-                    <Tag size={10}/> {product.brand || 'Generic'}
+                  <div className="font-black text-gray-900 leading-tight text-sm lg:text-base line-clamp-2">{product.name}</div>
+                  <div className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest flex items-center gap-1">
+                    <Tag size={10}/> {product.brand || 'No Brand'}
                   </div>
                 </div>
                 <div className="mt-4 flex items-end justify-between">
                   <div>
-                    <div className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">Current Stock</div>
-                    <div className={`text-xs font-black px-2 py-0.5 rounded-md inline-block ${product.stockQty > 10 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                    <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Stock</div>
+                    <div className="text-xs font-black text-gray-800 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
                       {product.stockQty} {product.unit}
                     </div>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 group-hover:bg-purple-100 group-hover:text-purple-600 flex items-center justify-center transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 group-hover:bg-amber-100 group-hover:text-amber-600 flex items-center justify-center transition-colors">
                     <Plus size={16} />
                   </div>
                 </div>
@@ -270,275 +262,315 @@ export default function NewPurchase() {
         </div>
       </div>
 
-      {/* ─── RIGHT PANEL: PURCHASE CART & SUPPLIER ─── */}
-      <div className="w-full md:w-[450px] bg-white border border-gray-200 rounded-3xl shadow-sm flex flex-col overflow-hidden">
+      {/* ─── RIGHT PANEL: PURCHASE CART (Desktop) / BOTTOM SHEET (Mobile) ─── */}
+      <div className={`fixed inset-x-0 bottom-0 z-[200] lg:z-auto lg:relative lg:w-[450px] bg-white border border-gray-200 rounded-t-[2rem] lg:rounded-[2rem] shadow-[0_-20px_40px_rgba(0,0,0,0.15)] lg:shadow-sm flex flex-col transition-transform duration-500 ease-in-out h-[92vh] lg:h-full shrink-0 ${isCartOpen ? 'translate-y-0' : 'translate-y-[120%] lg:translate-y-0'}`}>
         
-        <div className="p-5 border-b border-gray-100 bg-purple-50/30">
-          <label className="flex items-center gap-2 text-xs font-black text-purple-700 uppercase tracking-widest mb-2">
-            <Truck size={16} /> 1. Select Supplier
-          </label>
+        {/* Mobile Close Handle */}
+        <div className="w-full flex justify-center pt-4 pb-2 lg:hidden cursor-pointer" onClick={() => setIsCartOpen(false)}>
+          <div className="w-16 h-1.5 bg-gray-200 rounded-full"></div>
+        </div>
+
+        <div className="p-5 lg:p-6 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-[2rem] shrink-0">
+          <div className="flex items-center gap-3 font-black text-gray-900 text-xl">
+            <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center"><ShoppingCart size={20} /></div>
+            Purchase List
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="bg-gray-100 text-gray-600 text-[10px] font-black px-3 py-1.5 rounded-lg tracking-widest uppercase">
+              {cart.length} Items
+            </div>
+            <button onClick={() => setIsCartOpen(false)} className="lg:hidden p-2 bg-gray-50 text-gray-400 hover:text-gray-900 rounded-full transition-colors"><X size={18}/></button>
+          </div>
+        </div>
+
+        <div className="px-5 lg:px-6 pt-5 shrink-0">
+          <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Truck size={14}/> 1. Select Supplier</label>
           <select 
             value={selectedSupplier} onChange={(e) => setSelectedSupplier(e.target.value)}
-            className="w-full px-4 py-3 bg-white border border-purple-200 rounded-xl font-bold text-gray-900 focus:outline-none focus:border-purple-500 shadow-sm appearance-none cursor-pointer"
+            className="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-amber-500 transition-colors shadow-inner"
           >
-            <option value="">-- Choose Mahajan / Supplier --</option>
+            <option value="">-- Choose Mahajan --</option>
             {suppliers.map(s => <option key={s.id} value={s.id}>{s.name} {s.company ? `(${s.company})` : ''}</option>)}
           </select>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 bg-gray-50/50">
+        {/* Cart Items Scroll Area */}
+        <div className="flex-1 overflow-y-auto p-5 lg:p-6 space-y-4 bg-white [&::-webkit-scrollbar]:hidden">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-60">
-              <PackagePlus size={48} className="text-gray-300 mb-4" />
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Cart is empty</p>
-              <p className="text-xs text-gray-400 mt-2 font-medium max-w-[200px]">Click on existing products from the left or add a new one.</p>
+            <div className="h-full flex flex-col items-center justify-center text-gray-300">
+              <PackagePlus size={56} className="mb-4 opacity-50" strokeWidth={1} />
+              <p className="font-bold text-sm">Purchase cart is empty</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {cart.map((item, idx) => (
-                <div key={idx} className="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm relative group">
-                  <div className="font-bold text-gray-900 text-sm pr-8 mb-4">{item.name}</div>
-                  <button 
-                    onClick={() => removeFromCart(item.productId)}
-                    className="absolute top-3 right-3 text-gray-300 hover:text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* ─── SMART MEASUREMENT INPUT ─── */}
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Quantity</label>
-                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500 transition-all shadow-inner">
-                        <input 
-                          type="number" min="0" step="any"
-                          value={item.enteredQty} 
-                          onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value)}
-                          className="w-16 p-2 bg-transparent text-sm font-black text-gray-900 text-center outline-none"
-                          placeholder="0"
-                        />
-                        <div className="w-px h-6 bg-gray-200"></div>
-                        <select
-                          value={item.enteredUnit}
-                          onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)}
-                          className="bg-transparent w-full text-xs font-bold text-gray-600 p-2 pr-6 outline-none cursor-pointer appearance-none relative"
-                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1em' }}
-                        >
-                          {(item.baseUnit === "KG" || item.baseUnit === "Gram") && (
-                            <>
-                              <option value="Gram">Gram</option>
-                              <option value="KG">Kilo (KG)</option>
-                              <option value="Quintal">Quintal</option>
-                              <option value="Ton">Ton</option>
-                            </>
-                          )}
-                          {(item.baseUnit === "Ltr" || item.baseUnit === "ml") && (
-                            <>
-                              <option value="ml">ML</option>
-                              <option value="Ltr">Litre</option>
-                            </>
-                          )}
-                          {!["KG", "Gram", "Ltr", "ml"].includes(item.baseUnit) && (
-                            <option value={item.baseUnit}>{item.baseUnit}</option>
-                          )}
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1.5">Buying Price (₹)</label>
-                      <input 
-                        type="number" min="0" value={item.buyPrice} 
-                        onChange={(e) => updateCartItem(item.productId, 'buyPrice', e.target.value)}
-                        className="w-full px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm font-black text-purple-700 focus:outline-none focus:border-purple-500 focus:bg-white"
-                      />
-                    </div>
+            cart.map((item) => (
+              <div key={item.cartId} className="bg-white border border-gray-100 p-4 lg:p-5 rounded-2xl shadow-sm relative hover:border-amber-200 transition-colors group">
+                <div className="font-black text-gray-900 text-base pr-8 leading-tight">{item.customLabel}</div>
+                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Base: {item.name}</div>
+                
+                <button 
+                  onClick={() => removeFromCart(item.cartId)}
+                  className="absolute top-4 right-4 text-gray-300 hover:text-rose-500 transition-colors"
+                >
+                  <Trash2 size={18} />
+                </button>
+                
+                <div className="flex justify-between items-end mt-4 pt-4 border-t border-gray-50">
+                  <div className="bg-gray-50 px-3 py-1.5 rounded-lg text-sm font-black text-gray-600 border border-gray-100">
+                    {item.enteredQty} {item.enteredUnit} <span className="text-gray-400 mx-1">x</span> ₹{item.enteredPrice}
                   </div>
+                  <div className="font-black text-amber-600 text-xl">₹{(item.enteredQty * item.enteredPrice).toLocaleString('en-IN')}</div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))
           )}
         </div>
 
-        <div className="border-t border-gray-200 bg-white p-5">
-          <div className="flex justify-between items-center mb-5">
-            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Total Invoice Amount</span>
-            <span className="text-3xl font-black text-gray-900">₹{totalAmount.toLocaleString('en-IN')}</span>
+        <div className="p-5 lg:p-6 bg-white border-t border-gray-100 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] shrink-0 rounded-t-3xl">
+          <div className="flex justify-between items-center mb-4 text-gray-500 font-bold text-sm">
+            <span>Total Purchase Amount</span>
+            <span className="font-black text-gray-900 text-lg">₹{totalAmount.toLocaleString('en-IN')}</span>
+          </div>
+          
+          <div className="flex items-center justify-between mb-4 bg-gray-50 p-2 rounded-xl border border-gray-100 focus-within:border-amber-400 transition-colors">
+            <span className="text-gray-400 font-black text-[10px] uppercase tracking-widest pl-2 flex items-center gap-1.5"><Wallet size={12}/> Paid (₹)</span>
+            <input 
+              type="number" placeholder="0.00" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)}
+              className="w-32 text-right p-2 bg-transparent font-black text-gray-900 text-xl outline-none"
+            />
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 mb-5">
-            <label className="flex items-center gap-2 text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
-              <Wallet size={14} /> 2. Paid at Source (Cash/Bank)
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-black">₹</span>
-              <input 
-                type="number" placeholder="Enter paid amount..." 
-                value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)}
-                className="w-full pl-8 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl font-black text-gray-900 text-lg outline-none focus:border-purple-500 transition-all shadow-sm"
-              />
-            </div>
-            {currentDue > 0 && (
-              <div className="text-xs font-bold text-rose-500 mt-2.5 flex items-center justify-between">
-                <span>Remaining Balance Due:</span>
-                <span className="text-sm font-black">₹{currentDue.toLocaleString('en-IN')}</span>
-              </div>
-            )}
+          <div className="flex justify-between items-center mb-6">
+            <span className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Balance Pending</span>
+            <span className={`font-black text-xl ${currentDue > 0 ? 'text-rose-600' : 'text-gray-400'}`}>
+              ₹{currentDue > 0 ? currentDue.toLocaleString('en-IN') : 0}
+            </span>
           </div>
 
-          <button 
-            onClick={handleSubmit} disabled={isSubmitting || cart.length === 0}
-            className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-lg shadow-purple-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : (
-              <><CheckCircle size={20} /> 3. Confirm Purchase</>
-            )}
+          <button onClick={handleSubmit} disabled={isSubmitting || cart.length === 0} className="w-full bg-[#0f0f0f] hover:bg-black text-amber-500 font-black py-4 rounded-xl flex justify-center items-center gap-2 shadow-lg active:scale-95 transition-all disabled:opacity-70 text-sm tracking-widest uppercase">
+            {isSubmitting ? "Processing..." : <><CheckCircle size={18} /> Confirm Stock</>}
           </button>
         </div>
-
       </div>
 
-      {/* ─── MODAL: ADD NEW PRODUCT ─── */}
+      {/* ─── MOBILE FLOATING CART BAR ─── */}
+      {!isCartOpen && (
+        <div className="lg:hidden fixed bottom-16 inset-x-4 z-40 animate-in slide-in-from-bottom-10">
+          <button onClick={() => setIsCartOpen(true)} className="w-full bg-[#0f0f0f] border border-[#222] text-amber-500 p-4 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.5)] flex items-center justify-between font-black active:scale-95 transition-transform">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-500/10 p-2 rounded-xl border border-amber-500/20"><ShoppingCart size={20} /></div>
+              <div className="text-left leading-tight">
+                <div className="text-sm text-white">{cart.length} Items</div>
+                <div className="text-[10px] text-amber-500/80 uppercase tracking-widest mt-0.5">₹{totalAmount} Total</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs tracking-widest uppercase text-gray-300">View <ChevronRight size={16}/></div>
+          </button>
+        </div>
+      )}
+
+      {/* ─── MODAL: ADD NEW PRODUCT (Updated with Company & Custom Category) ─── */}
       {showAddProductModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90dvh]">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-gray-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             
-            <div className="p-4 md:p-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50 shrink-0">
-              <h3 className="font-black text-gray-900 text-base md:text-lg flex items-center gap-2">
-                <Package size={18} className="text-indigo-600 md:w-5 md:h-5" /> Register New Product
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-[#0f0f0f] shrink-0">
+              <h3 className="font-black text-white text-lg flex items-center gap-2 tracking-widest uppercase">
+                <Package size={20} className="text-amber-500" /> Fast Registration
               </h3>
-              <button onClick={() => setShowAddProductModal(false)} className="text-gray-400 hover:bg-white hover:shadow-sm p-1.5 md:p-2 rounded-full transition-all">
-                <X size={18} className="md:w-5 md:h-5" />
+              <button onClick={() => setShowAddProductModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              setIsAddingProduct(true);
-              try {
-                const token = Cookies.get("auth_token");
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-                const payload = { 
-                  ...newProduct, 
-                  unit: newProduct.baseUnit,
-                  isPackaged: newProduct.measureType === "packaged",
-                  buyPrice: Number(newProduct.buyPrice) || 0,
-                  sellPrice: Number(newProduct.sellPrice),
-                  stockQty: 0 
-                };
-                const res = await axios.post("https://agrovault.onrender.com/api/products", payload, config);
-                const createdProd = res.data.data;
-                setProducts([createdProd, ...products]);
-                addToCart(createdProd);
-                setShowAddProductModal(false);
-              } catch (error) { alert("Error creating product"); } 
-              finally { setIsAddingProduct(false); }
-            }} className="p-4 md:p-6 overflow-y-auto flex-1 pb-24 md:pb-6">
+            <form onSubmit={handleCreateProduct} className="p-5 md:p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden">
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Product Name *</label>
-                  <input type="text" placeholder="e.g., Super DAP 50kg" required value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-indigo-500" />
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Product Name *</label>
+                  <input type="text" required placeholder="e.g. Super DAP 50kg" value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:border-amber-500 transition-colors" />
                 </div>
+                
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Brand / Company</label>
-                  <input type="text" placeholder="e.g., IFFCO" value={newProduct.brand} onChange={(e) => setNewProduct({...newProduct, brand: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-indigo-500" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Category</label>
-                  <select value={newProduct.category} onChange={(e) => setNewProduct({...newProduct, category: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-indigo-500 appearance-none">
-                    <option value="Fertilizer">Fertilizer (Khaad)</option>
-                    <option value="Pesticide">Pesticide (Dawai)</option>
-                    <option value="Seed">Seeds (Beej)</option>
-                  </select>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Company Name <span className="text-gray-400 normal-case">(Optional)</span></label>
+                  <input type="text" placeholder="e.g. IFFCO, Bayer..." value={newProduct.company} onChange={(e) => setNewProduct({...newProduct, company: e.target.value})} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:border-amber-500 transition-colors" />
                 </div>
 
-                {/* ─── MEASUREMENT TYPE SELECTOR ─── */}
-                <div className="md:col-span-2 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
-                  <label className="block text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-3">Measurement & Pricing Style</label>
-                  <div className="flex gap-4 mb-4">
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-sm text-gray-700">
-                      <input type="radio" name="measureType" value="loose" checked={newProduct.measureType === "loose"} onChange={() => setNewProduct({...newProduct, measureType: "loose"})} className="w-4 h-4 text-indigo-600 focus:ring-indigo-500" /> 
-                      Khulla Samaan (Loose / Per KG)
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-sm text-gray-700">
-                      <input type="radio" name="measureType" value="packaged" checked={newProduct.measureType === "packaged"} onChange={() => setNewProduct({...newProduct, measureType: "packaged"})} className="w-4 h-4 text-indigo-600 focus:ring-indigo-500" /> 
-                      Packaged Samaan (Bag / Box)
-                    </label>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Brand / Variety</label>
+                  <input type="text" placeholder="e.g. Ujjawal, Hybrid..." value={newProduct.brand} onChange={(e) => setNewProduct({...newProduct, brand: e.target.value})} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:border-amber-500 transition-colors" />
+                </div>
+
+                <div className={`md:col-span-2 grid grid-cols-1 ${newProduct.category === "Other" ? "md:grid-cols-2" : "md:grid-cols-1"} gap-4 transition-all duration-300`}>
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Category</label>
+                    <select value={newProduct.category} onChange={(e) => setNewProduct({...newProduct, category: e.target.value, customCategory: ""})} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:border-amber-500 transition-colors">
+                      <option value="Fertilizer">Fertilizer (Khaad)</option>
+                      <option value="Pesticide">Pesticide (Dawai)</option>
+                      <option value="Seed">Seeds (Beej)</option>
+                      <option value="Tool">Tools (Ozaar)</option>
+                      <option value="Other">Other (Custom Entry)</option>
+                    </select>
                   </div>
-
-                  {/* LOOSE PRICING */}
-                  {newProduct.measureType === "loose" && (
-                    <div className="grid grid-cols-3 gap-3 animate-in fade-in duration-300">
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Base Unit</label>
-                        <select value={newProduct.baseUnit} onChange={(e) => setNewProduct({...newProduct, baseUnit: e.target.value})} className="w-full p-3 border rounded-xl font-bold text-sm">
-                          <option value="KG">KG</option><option value="Ltr">Litre</option><option value="Pcs">Piece</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Buy Price (Per {newProduct.baseUnit})</label>
-                        <input type="number" placeholder="0" value={newProduct.buyPrice} onChange={(e) => setNewProduct({...newProduct, buyPrice: e.target.value})} className="w-full p-3 border rounded-xl font-bold text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-indigo-500 uppercase mb-1">Sell Price (Per {newProduct.baseUnit})</label>
-                        <input type="number" placeholder="0" required value={newProduct.sellPrice} onChange={(e) => setNewProduct({...newProduct, sellPrice: e.target.value})} className="w-full p-3 border border-indigo-200 bg-indigo-50 rounded-xl font-bold text-indigo-700 text-sm" />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* PACKAGED PRICING (SMART AUTO CALCULATION) */}
-                  {newProduct.measureType === "packaged" && (
-                    <div className="space-y-4 animate-in fade-in duration-300">
-                      <div className="grid grid-cols-3 gap-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                        <div>
-                          <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Package</label>
-                          <select value={newProduct.packageUnit} onChange={(e) => setNewProduct({...newProduct, packageUnit: e.target.value})} className="w-full p-2 border rounded-lg font-bold text-sm">
-                            <option value="Bag">Bag (Bora)</option><option value="Box">Box (Peti)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Weight Inside</label>
-                          <input type="number" placeholder="e.g. 50" required value={newProduct.qtyPerPackage} onChange={(e) => setNewProduct({...newProduct, qtyPerPackage: e.target.value})} className="w-full p-2 border rounded-lg font-bold text-sm text-center" />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Unit Inside</label>
-                          <select value={newProduct.baseUnit} onChange={(e) => setNewProduct({...newProduct, baseUnit: e.target.value})} className="w-full p-2 border rounded-lg font-bold text-sm">
-                            <option value="KG">KG</option><option value="Ltr">Litre</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-3 rounded-xl border border-gray-200">
-                          <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">1 {newProduct.packageUnit} Buy Price</label>
-                          <input type="number" placeholder={`₹ Rate per ${newProduct.packageUnit}`} value={newProduct.packBuyPrice} onChange={(e) => setNewProduct({...newProduct, packBuyPrice: e.target.value})} className="w-full p-2 border rounded-lg font-black text-gray-800 text-sm mb-2" />
-                          <div className="text-[10px] font-bold text-gray-500 bg-gray-50 p-1.5 rounded text-center">
-                            = ₹{newProduct.buyPrice || 0} per {newProduct.baseUnit}
-                          </div>
-                        </div>
-                        <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-200">
-                          <label className="block text-[10px] font-black text-indigo-500 uppercase mb-2">1 {newProduct.packageUnit} Sell Price *</label>
-                          <input type="number" placeholder={`₹ Rate per ${newProduct.packageUnit}`} required value={newProduct.packSellPrice} onChange={(e) => setNewProduct({...newProduct, packSellPrice: e.target.value})} className="w-full p-2 border border-indigo-200 rounded-lg font-black text-indigo-700 text-sm mb-2" />
-                          <div className="text-[10px] font-bold text-indigo-600 bg-white p-1.5 rounded border border-indigo-100 text-center">
-                            = ₹{newProduct.sellPrice || 0} per {newProduct.baseUnit}
-                          </div>
-                        </div>
-                      </div>
+                  {newProduct.category === "Other" && (
+                    <div className="animate-in fade-in zoom-in-95 duration-200">
+                      <label className="block text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2">Type Custom Category *</label>
+                      <input type="text" required placeholder="e.g. Animal Feed..." value={newProduct.customCategory} onChange={(e) => setNewProduct({...newProduct, customCategory: e.target.value})} className="w-full px-4 py-3.5 bg-amber-50 border border-amber-200 rounded-xl font-black text-amber-900 outline-none focus:ring-2 focus:ring-amber-500/20 transition-colors" />
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="pt-3 flex gap-3 border-t border-gray-100">
-                <button type="button" onClick={() => setShowAddProductModal(false)} className="flex-1 py-4 font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100">Cancel</button>
-                <button type="submit" disabled={isAddingProduct} className="flex-[2] py-4 font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 active:scale-95 flex justify-center items-center gap-2">
-                  {isAddingProduct ? "Saving..." : <><CheckCircle size={20} /> Register & Add to Cart</>}
-                </button>
+              {/* Smart Measurement Module */}
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm mb-2">
+                <label className="block text-[10px] font-black text-amber-600 uppercase tracking-widest mb-4 flex items-center gap-2"><Tag size={14}/> Stock & Pricing Setup</label>
+                
+                <div className="flex gap-3 mb-6 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
+                  <label className={`flex-1 text-center py-2.5 rounded-lg cursor-pointer transition-all ${newProduct.measureType === "loose" ? "bg-[#0f0f0f] text-amber-500 font-black shadow-md" : "text-gray-500 font-bold hover:text-gray-900"}`}>
+                    <input type="radio" className="hidden" checked={newProduct.measureType === "loose"} onChange={() => setNewProduct({...newProduct, measureType: "loose"})} /> Khulla (Loose)
+                  </label>
+                  <label className={`flex-1 text-center py-2.5 rounded-lg cursor-pointer transition-all ${newProduct.measureType === "packaged" ? "bg-[#0f0f0f] text-amber-500 font-black shadow-md" : "text-gray-500 font-bold hover:text-gray-900"}`}>
+                    <input type="radio" className="hidden" checked={newProduct.measureType === "packaged"} onChange={() => setNewProduct({...newProduct, measureType: "packaged"})} /> Packaged (Bori/Bag)
+                  </label>
+                </div>
+
+                {newProduct.measureType === "loose" && (
+                  <div className="grid grid-cols-3 gap-3 animate-in fade-in duration-300">
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Unit</label>
+                      <select value={newProduct.baseUnit} onChange={(e) => setNewProduct({...newProduct, baseUnit: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none"><option value="KG">KG</option><option value="Ltr">Litre</option><option value="Pcs">Piece</option></select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Buy/Unit</label>
+                      <input type="number" placeholder="0" value={newProduct.buyPrice} onChange={(e) => setNewProduct({...newProduct, buyPrice: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2">Sell/Unit *</label>
+                      <input type="number" placeholder="0" required value={newProduct.sellPrice} onChange={(e) => setNewProduct({...newProduct, sellPrice: e.target.value})} className="w-full p-3 bg-amber-50 border border-amber-200 rounded-xl font-black text-amber-800 outline-none focus:ring-2 focus:ring-amber-500/20" />
+                    </div>
+                  </div>
+                )}
+
+                {newProduct.measureType === "packaged" && (
+                  <div className="space-y-5 animate-in fade-in duration-300">
+                    <div className="grid grid-cols-3 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                      <div><label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Pack Type</label><select value={newProduct.packageUnit} onChange={(e) => setNewProduct({...newProduct, packageUnit: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg font-bold text-sm outline-none"><option value="Bag">Bora</option><option value="Box">Peti</option></select></div>
+                      <div><label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 text-center">Inside Wt.</label><input type="number" required value={newProduct.qtyPerPackage} onChange={(e) => setNewProduct({...newProduct, qtyPerPackage: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg font-black text-sm text-center outline-none" placeholder="e.g. 50" /></div>
+                      <div><label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Inside Unit</label><select value={newProduct.baseUnit} onChange={(e) => setNewProduct({...newProduct, baseUnit: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg font-bold text-sm outline-none"><option value="KG">KG</option><option value="Ltr">Litre</option></select></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white p-3 rounded-xl border border-gray-200 relative overflow-hidden">
+                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">1 {newProduct.packageUnit} Buy Price</label>
+                        <input type="number" placeholder="₹ Rate" value={newProduct.packBuyPrice} onChange={(e) => setNewProduct({...newProduct, packBuyPrice: e.target.value})} className="w-full p-3 border border-gray-200 rounded-lg font-black text-gray-900 mb-3 outline-none" />
+                        <div className="text-[10px] font-bold text-gray-500 bg-gray-50 px-2 py-1.5 rounded-lg border border-gray-100 flex justify-between"><span>BASE =</span><span>₹{newProduct.buyPrice || 0} /{newProduct.baseUnit}</span></div>
+                      </div>
+                      <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 relative overflow-hidden">
+                        <label className="block text-[10px] font-black text-amber-700 uppercase tracking-widest mb-2">1 {newProduct.packageUnit} Sell Price *</label>
+                        <input type="number" placeholder="₹ Rate" required value={newProduct.packSellPrice} onChange={(e) => setNewProduct({...newProduct, packSellPrice: e.target.value})} className="w-full p-3 bg-white border border-amber-300 rounded-lg font-black text-amber-900 mb-3 outline-none focus:ring-2 focus:ring-amber-500/20" />
+                        <div className="text-[10px] font-black text-amber-700 bg-white px-2 py-1.5 rounded-lg border border-amber-100 shadow-sm flex justify-between"><span>BASE =</span><span>₹{newProduct.sellPrice || 0} /{newProduct.baseUnit}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </form>
 
+            <div className="p-5 border-t border-gray-100 bg-white shrink-0 flex gap-3">
+              <button type="button" onClick={() => setShowAddProductModal(false)} className="flex-1 py-4 font-black text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors uppercase tracking-widest text-xs">Cancel</button>
+              <button type="submit" onClick={handleCreateProduct} disabled={isAddingProduct} className="flex-[2] py-4 font-black text-amber-500 bg-[#0f0f0f] rounded-xl hover:bg-black shadow-xl shadow-black/20 transition-all flex justify-center items-center gap-2 active:scale-95 disabled:opacity-70 uppercase tracking-widest text-xs">
+                {isAddingProduct ? "Saving..." : <><CheckCircle size={18} /> Register & Add to Cart</>}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ─── THE SMART UNIT ADDER MODAL (PURCHASE SPECIFIC - DARK GOLD) ─── */}
+      {activeItem && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[#0f0f0f]/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#1a1a1a] w-full max-w-sm rounded-[2rem] shadow-[0_0_50px_rgba(245,158,11,0.15)] border border-[#333] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            
+            <div className="p-5 border-b border-[#333] flex justify-between items-start bg-[#0f0f0f] shrink-0">
+              <div>
+                <h3 className="font-black text-white text-xl leading-tight pr-4">{activeItem.name}</h3>
+                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mt-1.5">Adding to Inventory</p>
+              </div>
+              <button onClick={() => setActiveItem(null)} className="p-2 bg-[#222] rounded-full border border-[#333] text-gray-400 hover:text-white shadow-sm shrink-0"><X size={18}/></button>
+            </div>
+
+            <div className="p-6 space-y-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden">
+              {/* Dual Input: Qty & Unit */}
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">How much quantity purchased?</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="number" min="0" step="any"
+                    value={draftConfig.qty} onChange={(e) => setDraftConfig({...draftConfig, qty: e.target.value})}
+                    className="w-1/2 p-3.5 bg-[#0f0f0f] border border-[#333] rounded-xl font-black text-white text-center outline-none focus:border-amber-500 transition-colors"
+                  />
+                  <select 
+                    value={draftConfig.unit} onChange={(e) => setDraftConfig({...draftConfig, unit: e.target.value})}
+                    className="w-1/2 p-3.5 bg-[#0f0f0f] border border-[#333] rounded-xl font-bold text-sm text-gray-300 outline-none focus:border-amber-500 transition-colors"
+                  >
+                    {["KG", "Gram"].includes(activeItem.unit) && (
+                      <><option value="KG">Kilo (KG)</option><option value="Gram">Gram (g)</option><option value="Custom_Bag">Bag / Bori</option><option value="Quintal">Quintal</option><option value="Ton">Ton</option></>
+                    )}
+                    {["Litre", "ML", "ml"].includes(activeItem.unit) && (
+                      <><option value="Litre">Litre (L)</option><option value="ml">ML</option></>
+                    )}
+                    {!["KG", "Gram", "Litre", "ML", "ml"].includes(activeItem.unit) && (
+                      <><option value={activeItem.unit}>{activeItem.unit}</option><option value="Dozen">Dozen</option><option value="Box">Box</option></>
+                    )}
+                  </select>
+                </div>
+                
+                {/* DYNAMIC BAG WEIGHT INPUT */}
+                {draftConfig.unit === "Custom_Bag" && (
+                  <div className="mt-3 flex items-center justify-between bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 animate-in fade-in zoom-in-95">
+                    <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest">1 Bag Weight =</label>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="number" value={draftConfig.customMultiplier} 
+                        onChange={(e) => setDraftConfig({...draftConfig, customMultiplier: e.target.value})} 
+                        className="w-16 p-1.5 rounded-lg text-sm font-black text-center text-white bg-[#0f0f0f] border border-amber-500/30 outline-none focus:border-amber-500" 
+                      />
+                      <span className="text-[10px] font-black text-amber-500 uppercase">{activeItem.unit}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Dynamic Price Override (BUY RATE) */}
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block flex items-center gap-1"><Tag size={12}/> Buy Rate Per Unit (₹)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-black">₹</span>
+                  <input 
+                    type="number" 
+                    value={draftConfig.price} onChange={(e) => setDraftConfig({...draftConfig, price: e.target.value})}
+                    className="w-full pl-9 pr-4 py-3.5 bg-[#0f0f0f] border border-[#333] rounded-xl font-black text-white outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Receipt Label / Memo Note */}
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Stock Note / Parchi Label</label>
+                <input 
+                  type="text" placeholder="e.g., 20 Bori IFFCO 45kg"
+                  value={draftConfig.customLabel} onChange={(e) => setDraftConfig({...draftConfig, customLabel: e.target.value})}
+                  className="w-full p-3.5 bg-[#0f0f0f] border border-[#333] rounded-xl font-bold text-sm text-white outline-none focus:border-amber-500 transition-colors placeholder-gray-600"
+                />
+                <p className="text-[9px] font-bold text-gray-500 mt-2 leading-relaxed">Leave empty to use original name. <span className="text-amber-500 font-black">{(Number(draftConfig.qty) * getMultiplier(draftConfig.unit, draftConfig.customMultiplier)) || 0} {activeItem.unit}</span> will be added to your inventory.</p>
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-[#333] bg-[#0f0f0f] shrink-0">
+              <button onClick={confirmAddToCart} className="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-black py-4 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] active:scale-95 transition-all text-lg">
+                Add Stock - ₹{(draftConfig.qty * draftConfig.price).toLocaleString('en-IN')}
+              </button>
+            </div>
           </div>
         </div>
       )}

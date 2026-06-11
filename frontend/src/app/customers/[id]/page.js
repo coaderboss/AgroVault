@@ -322,15 +322,28 @@ export default function CustomerProfile() {
                       </div>
                       
                       <div className="text-xs font-bold text-gray-600 space-y-2 mb-4">
-                        {order.items.map(i => (
-                          <div key={i.id} className="flex justify-between items-start bg-gray-50/50 p-2 rounded-lg border border-gray-50">
+                        {order.items.map(i => {
+                          const baseName = i.product ? i.product.name : 'Unknown Product';
+                          const displayName = i.customLabel || baseName;
+                          const displayQty = i.enteredQty || i.qty;
+                          const displayUnit = i.enteredUnit && i.enteredUnit !== "Base" ? i.enteredUnit : (i.product?.unit || "Unit");
+                          const displayRate = i.enteredPrice || i.priceAtSale;
+                          const itemTotal = i.enteredPrice ? (i.enteredQty * i.enteredPrice) : (i.qty * i.priceAtSale);
+                          const showSubtext = i.enteredUnit && i.enteredUnit !== "Base" && i.enteredUnit !== "KG" && i.enteredUnit !== "Gram" && i.enteredUnit !== "Ltr" && i.enteredUnit !== "ml";
+
+                          return (
+                          <div key={i.id} className="flex justify-between items-start bg-gray-50/50 p-3 rounded-xl border border-gray-100">
                             <div className="flex flex-col">
-                              <span className="text-sm font-black text-gray-800">{i.product.name}</span>
-                              <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">{i.qty} {i.enteredUnit || 'Unit'} @ ₹{i.priceAtSale}/unit</span>
+                              <span className="text-sm font-black text-gray-800">{displayName}</span>
+                              {i.customLabel && <span className="text-[9px] text-gray-400 uppercase tracking-widest mt-0.5">Base: {baseName}</span>}
+                              <span className="text-[10px] text-gray-500 uppercase tracking-widest mt-1.5 bg-white w-fit px-2 py-0.5 rounded shadow-sm border border-gray-200">
+                                {displayQty} {displayUnit} @ ₹{displayRate}/{displayUnit}
+                                {showSubtext && ` (${i.qty} ${i.product?.unit || 'Unit'} Total)`}
+                              </span>
                             </div>
-                            <span className="font-black text-gray-900">₹{(i.qty * i.priceAtSale).toLocaleString('en-IN')}</span>
+                            <span className="font-black text-gray-900 text-sm">₹{itemTotal.toLocaleString('en-IN')}</span>
                           </div>
-                        ))}
+                        )})}
                       </div>
                       
                       <div className="flex justify-between text-xs font-black bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -434,26 +447,32 @@ export default function CustomerProfile() {
               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><CheckCircle2 size={14}/> Select Items to Return</h4>
               
               <div className="space-y-3 mb-6 bg-white border border-gray-100 p-3 rounded-2xl shadow-sm">
-                {returnModal.order.items.map(item => (
+                {returnModal.order.items.map(item => {
+                  const baseName = item.product ? item.product.name : 'Unknown';
+                  const displayName = item.customLabel || baseName;
+                  const displayQty = item.enteredQty || item.qty;
+                  const displayUnit = item.enteredUnit && item.enteredUnit !== "Base" ? item.enteredUnit : (item.product?.unit || 'Unit');
+                  
+                  return (
                   <div key={item.id} className="flex justify-between items-center border-b border-gray-50 pb-3 last:border-0 last:pb-0">
                     <div>
-                      <p className="text-sm font-black text-gray-800">{item.product.name}</p>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Sold: {item.qty} {item.enteredUnit || 'Unit'}</p>
+                      <p className="text-sm font-black text-gray-800">{displayName}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Sold: {displayQty} {displayUnit}</p>
                     </div>
                     <div className="w-24 relative">
                       <input 
                         type="number" 
                         min="0" 
-                        max={item.qty} 
+                        max={displayQty} 
                         step="any"
                         value={returnItemSelections[item.productId] || ""}
                         onChange={(e) => setReturnItemSelections({...returnItemSelections, [item.productId]: Number(e.target.value)})}
-                        placeholder={`Max ${item.qty}`}
-                        className="w-full px-3 py-2 text-xs font-black bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-center"
+                        placeholder={`Max ${displayQty}`}
+                        className="w-full px-3 py-2 text-xs font-black bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-center"
                       />
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
 
               <div className="space-y-4">

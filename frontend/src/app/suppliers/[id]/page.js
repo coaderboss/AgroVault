@@ -6,7 +6,7 @@ import Cookies from "js-cookie";
 import { 
   ArrowLeft, Factory, Phone, MapPin, Wallet, 
   ReceiptText, ArrowUpRight, Check, ShoppingCart, 
-  FileText, ArrowDownLeft, Package
+  FileText, ArrowDownLeft, Package, Trash2, AlertOctagon, X
 } from "lucide-react";
 
 export default function SupplierPassbook() {
@@ -20,11 +20,15 @@ export default function SupplierPassbook() {
   const [payAmount, setPayAmount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // ─── DELETE BILL STATES ───
+  const [deleteModal, setDeleteModal] = useState({ show: false, billId: null });
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const fetchSupplierDetails = async () => {
     try {
-      const token = Cookies.get("auth_token"); // <-- Chaabi nikali
+      const token = Cookies.get("auth_token");
       const res = await axios.get(`https://agrovault.onrender.com/api/suppliers/${id}`, {
-        headers: { Authorization: `Bearer ${token}` } // <-- Envelop bheja
+        headers: { Authorization: `Bearer ${token}` } 
       });
       setSupplier(res.data.data);
       setLoading(false);
@@ -43,10 +47,10 @@ export default function SupplierPassbook() {
     
     setIsProcessing(true);
     try {
-      const token = Cookies.get("auth_token"); // <-- Chaabi nikali
+      const token = Cookies.get("auth_token"); 
       await axios.post(`https://agrovault.onrender.com/api/suppliers/${id}/pay`, 
         { amount: Number(payAmount) },
-        { headers: { Authorization: `Bearer ${token}` } } // <-- Envelop bheja
+        { headers: { Authorization: `Bearer ${token}` } } 
       );
       setPayAmount("");
       await fetchSupplierDetails();
@@ -58,11 +62,28 @@ export default function SupplierPassbook() {
     }
   };
 
+  // ─── CANCEL / DELETE BILL LOGIC ───
+  const confirmDeleteBill = async () => {
+    setIsDeleting(true);
+    try {
+      const token = Cookies.get("auth_token");
+      await axios.delete(`https://agrovault.onrender.com/api/purchases/${deleteModal.billId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDeleteModal({ show: false, billId: null });
+      await fetchSupplierDetails(); // Refresh everything
+    } catch (error) {
+      alert("Bill delete karne mein error aaya!");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) return (
     <div className="h-full flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-        <p className="text-gray-400 font-bold tracking-widest text-sm uppercase">Loading Ledger...</p>
+        <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-500 rounded-full animate-spin"></div>
+        <p className="text-gray-400 font-bold tracking-widest text-sm uppercase">Syncing Ledger...</p>
       </div>
     </div>
   );
@@ -82,7 +103,7 @@ export default function SupplierPassbook() {
       id: `pur_${p.id}`,
       date: new Date(p.createdAt),
       type: 'PURCHASE',
-      description: 'Purchase Invoice Generated',
+      description: `Invoice #${p.id.slice(-6).toUpperCase()}`,
       credit: p.totalAmount,
       debit: 0
     });
@@ -91,7 +112,7 @@ export default function SupplierPassbook() {
         id: `pur_pay_${p.id}`,
         date: new Date(p.createdAt),
         type: 'ADVANCE',
-        description: 'Initial Payment at Purchase',
+        description: `Advance on Invoice #${p.id.slice(-6).toUpperCase()}`,
         credit: 0,
         debit: p.paidAmount
       });
@@ -122,63 +143,63 @@ export default function SupplierPassbook() {
       
       {/* ─── HEADER ─── */}
       <div className="flex items-start md:items-center gap-3 md:gap-4 mb-6">
-        <button onClick={() => router.push('/suppliers')} className="p-2 mt-1 md:mt-0 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition-colors shadow-sm shrink-0">
-          <ArrowLeft size={18} className="md:w-5 md:h-5" />
+        <button onClick={() => router.push('/suppliers')} className="p-2.5 mt-1 md:mt-0 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition-colors shadow-sm shrink-0">
+          <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">{supplier.name}</h1>
-          <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm font-bold text-gray-500 mt-2">
+          <h1 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight">{supplier.name}</h1>
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 text-[10px] md:text-xs font-bold text-gray-500 mt-2 uppercase tracking-widest">
             {supplier.company && (
-              <span className="flex items-center gap-1 text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">
-                <Factory size={12} className="md:w-[14px] md:h-[14px]"/> {supplier.company}
+              <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md">
+                <Factory size={12}/> {supplier.company}
               </span>
             )}
-            <span className="flex items-center gap-1"><Phone size={12} className="md:w-[14px] md:h-[14px]"/> {supplier.mobile}</span>
-            {supplier.address && <span className="flex items-center gap-1"><MapPin size={12} className="md:w-[14px] md:h-[14px]"/> {supplier.address}</span>}
+            <span className="flex items-center gap-1.5"><Phone size={12}/> {supplier.mobile}</span>
+            {supplier.address && <span className="flex items-center gap-1.5"><MapPin size={12}/> {supplier.address}</span>}
           </div>
         </div>
       </div>
 
       {/* ─── FINANCIAL METRICS ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-        <div className="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden group">
-          <div className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 relative z-10">Net Payable (Due)</div>
-          <div className={`text-2xl md:text-4xl font-black relative z-10 ${currentDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+        <div className="bg-white p-5 md:p-6 rounded-2xl md:rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden group">
+          <div className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 relative z-10">Net Payable (Due)</div>
+          <div className={`text-3xl md:text-4xl font-black relative z-10 ${currentDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
             ₹{currentDue.toLocaleString('en-IN')}
           </div>
           <Wallet size={80} className={`absolute -bottom-4 -right-4 opacity-[0.03] md:w-[100px] md:h-[100px] ${currentDue > 0 ? 'text-rose-900' : 'text-emerald-900'}`} />
         </div>
-        <div className="bg-gray-50 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-gray-100 flex flex-col justify-center">
-          <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Purchases (Cr)</div>
-          <div className="text-lg md:text-2xl font-black text-gray-800">₹{totalBilled.toLocaleString('en-IN')}</div>
+        <div className="bg-gray-50 p-5 md:p-6 rounded-2xl md:rounded-3xl border border-gray-100 flex flex-col justify-center">
+          <div className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Total Purchases (Cr)</div>
+          <div className="text-xl md:text-2xl font-black text-gray-800">₹{totalBilled.toLocaleString('en-IN')}</div>
         </div>
-        <div className="bg-gray-50 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-gray-100 flex flex-col justify-center">
-          <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Paid (Dr)</div>
-          <div className="text-lg md:text-2xl font-black text-gray-800">₹{totalPaid.toLocaleString('en-IN')}</div>
+        <div className="bg-gray-50 p-5 md:p-6 rounded-2xl md:rounded-3xl border border-gray-100 flex flex-col justify-center">
+          <div className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Total Paid (Dr)</div>
+          <div className="text-xl md:text-2xl font-black text-gray-800">₹{totalPaid.toLocaleString('en-IN')}</div>
         </div>
       </div>
 
       {/* ─── RECORD PAYMENT ACTION ─── */}
       {currentDue > 0 && (
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-3xl p-6 mb-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 rounded-3xl p-5 md:p-6 mb-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div>
-            <h4 className="font-bold text-purple-900 flex items-center gap-2 text-lg">
-              <ArrowUpRight size={20} className="text-purple-600"/> Record Payment
+            <h4 className="font-black text-white flex items-center gap-2 text-lg">
+              <ArrowUpRight size={20} className="text-amber-500"/> Record Payment
             </h4>
-            <p className="text-sm text-purple-700/80 font-medium mt-1">Log a payment settlement for this supplier.</p>
+            <p className="text-[11px] md:text-xs text-gray-400 font-bold mt-1 tracking-widest uppercase">Clear outstanding dues from ledger.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <div className="relative flex-1 sm:w-56">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">₹</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-black text-lg">₹</span>
               <input 
                 type="number" placeholder="Enter amount..."
                 value={payAmount} onChange={(e) => setPayAmount(e.target.value)}
-                className="w-full pl-9 pr-4 py-3 md:py-3.5 bg-white border border-purple-200 rounded-xl md:rounded-2xl font-black text-gray-900 text-base md:text-lg outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all shadow-sm"
+                className="w-full pl-9 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-xl font-black text-white text-lg outline-none focus:border-amber-500 transition-colors"
               />
             </div>
             <button 
               onClick={handlePayment} disabled={isProcessing}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-2xl shadow-md transition-all active:scale-95 flex justify-center items-center gap-2 whitespace-nowrap disabled:opacity-70"
+              className="bg-amber-500 hover:bg-amber-400 text-gray-900 font-black px-6 md:px-8 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 transition-all active:scale-95 flex justify-center items-center gap-2 whitespace-nowrap disabled:opacity-70 text-sm tracking-widest uppercase"
             >
               {isProcessing ? "Processing..." : "Settle Amount"}
             </button>
@@ -188,46 +209,49 @@ export default function SupplierPassbook() {
 
       {/* ─── TABS NAVIGATION ─── */}
       <div className="flex space-x-2 border-b border-gray-200 mb-4 md:mb-6 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <button onClick={() => setActiveTab("ledger")} className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === "ledger" ? "border-purple-600 text-purple-700" : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"}`}>
-          <FileText size={18} /> Statement (Ledger)
+        <button onClick={() => setActiveTab("ledger")} className={`flex items-center gap-2 px-5 py-3 text-sm font-black border-b-2 transition-colors whitespace-nowrap uppercase tracking-widest ${activeTab === "ledger" ? "border-amber-500 text-amber-600 bg-amber-50/50 rounded-t-xl" : "border-transparent text-gray-500 hover:text-gray-900"}`}>
+          <FileText size={16} /> Ledger
         </button>
-        <button onClick={() => setActiveTab("purchases")} className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === "purchases" ? "border-purple-600 text-purple-700" : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"}`}>
-          <ShoppingCart size={18} /> Purchase Invoices
+        <button onClick={() => setActiveTab("purchases")} className={`flex items-center gap-2 px-5 py-3 text-sm font-black border-b-2 transition-colors whitespace-nowrap uppercase tracking-widest ${activeTab === "purchases" ? "border-amber-500 text-amber-600 bg-amber-50/50 rounded-t-xl" : "border-transparent text-gray-500 hover:text-gray-900"}`}>
+          <ShoppingCart size={16} /> Invoices
         </button>
-        <button onClick={() => setActiveTab("payments")} className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === "payments" ? "border-purple-600 text-purple-700" : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"}`}>
-          <ArrowUpRight size={18} /> Payment Records
+        <button onClick={() => setActiveTab("payments")} className={`flex items-center gap-2 px-5 py-3 text-sm font-black border-b-2 transition-colors whitespace-nowrap uppercase tracking-widest ${activeTab === "payments" ? "border-amber-500 text-amber-600 bg-amber-50/50 rounded-t-xl" : "border-transparent text-gray-500 hover:text-gray-900"}`}>
+          <ArrowUpRight size={16} /> Payments
         </button>
       </div>
 
       {/* ─── TAB CONTENT ─── */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
         
         {/* TAB 1: STATEMENT (LEDGER) */}
         {activeTab === "ledger" && (
           <div className="overflow-x-auto">
             {ledgerWithBalance.length === 0 ? (
-              <p className="text-gray-400 font-medium text-center py-16">No financial records found.</p>
+              <div className="flex flex-col items-center justify-center py-20 text-gray-300">
+                <FileText size={48} strokeWidth={1} className="mb-4 opacity-50"/>
+                <p className="font-bold">No financial records found.</p>
+              </div>
             ) : (
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest">Date & Details</th>
-                    <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest text-right">Debit (Paid)</th>
-                    <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest text-right">Credit (Billed)</th>
-                    <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest text-right">Balance</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date & Details</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Debit (Paid)</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Credit (Billed)</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Balance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-50">
                   {ledgerWithBalance.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${item.type === 'PURCHASE' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                            {item.type === 'PURCHASE' ? <ArrowDownLeft size={18}/> : <ArrowUpRight size={18}/>}
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${item.type === 'PURCHASE' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                            {item.type === 'PURCHASE' ? <ShoppingCart size={16}/> : <ArrowUpRight size={16}/>}
                           </div>
                           <div>
-                            <div className="font-bold text-gray-900 text-sm">{item.description}</div>
-                            <div className="text-xs font-bold text-gray-400 mt-0.5">
+                            <div className="font-black text-gray-900 text-sm">{item.description}</div>
+                            <div className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">
                               {item.date.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}
                             </div>
                           </div>
@@ -240,8 +264,8 @@ export default function SupplierPassbook() {
                         {item.credit > 0 ? `₹${item.credit.toLocaleString()}` : '-'}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="font-black text-gray-900">₹{Math.abs(item.balance).toLocaleString()}</div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">
+                        <div className="font-black text-gray-900 text-base">₹{Math.abs(item.balance).toLocaleString()}</div>
+                        <div className={`text-[9px] font-black uppercase mt-0.5 tracking-widest ${item.balance > 0 ? 'text-rose-500' : item.balance < 0 ? 'text-emerald-500' : 'text-gray-400'}`}>
                           {item.balance > 0 ? 'Payable' : item.balance < 0 ? 'Advance' : 'Settled'}
                         </div>
                       </td>
@@ -253,45 +277,89 @@ export default function SupplierPassbook() {
           </div>
         )}
 
-        {/* TAB 2: PURCHASE INVOICES (WITH ITEMS LIST) */}
+        {/* TAB 2: PURCHASE INVOICES (WITH RICH ITEMS LIST) */}
         {activeTab === "purchases" && (
-          <div className="p-6 space-y-4">
-            {supplier.purchases.length === 0 && <p className="text-gray-400 font-medium text-center py-10">No purchase invoices recorded.</p>}
+          <div className="p-4 md:p-6 space-y-5 bg-gray-50/30">
+            {supplier.purchases.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-gray-300">
+                <ShoppingCart size={48} strokeWidth={1} className="mb-4 opacity-50"/>
+                <p className="font-bold text-sm uppercase tracking-widest">No purchase invoices</p>
+              </div>
+            )}
+            
             {supplier.purchases.map((bill) => (
-              <div key={bill.id} className="bg-gray-50 p-5 rounded-2xl border border-gray-100 hover:border-gray-200 transition-all flex flex-col">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white border border-gray-200 text-gray-500 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+              <div key={bill.id} className="bg-white p-5 md:p-6 rounded-[2rem] border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col">
+                
+                {/* ─── INVOICE HEADER & DELETE BUTTON ─── */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5 border-b border-gray-100 pb-5">
+                  <div className="flex items-start gap-4 w-full md:w-auto">
+                    <div className="w-12 h-12 bg-amber-50 border border-amber-100 text-amber-600 rounded-xl flex items-center justify-center shadow-sm shrink-0 mt-1 md:mt-0">
                       <ReceiptText size={20} />
                     </div>
-                    <div>
-                      <div className="font-bold text-gray-900 mb-1">Invoice #{bill.id.slice(-6).toUpperCase()}</div>
-                      <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                         {new Date(bill.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric'})}
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-3 mb-1">
+                        <h3 className="font-black text-gray-900 text-lg">Invoice #{bill.id.slice(-6).toUpperCase()}</h3>
+                        
+                        {/* THE PROPERLY ALIGNED DELETE BUTTON */}
+                        <button 
+                          onClick={() => setDeleteModal({ show: true, billId: bill.id })}
+                          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-colors border border-rose-100 flex items-center gap-1.5 shadow-sm active:scale-95"
+                          title="Delete Invoice"
+                        >
+                          <Trash2 size={14} /> <span className="text-[10px] font-black uppercase tracking-widest">Delete</span>
+                        </button>
+                      </div>
+                      
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                         Date: {new Date(bill.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-black text-xl text-gray-900">₹{bill.totalAmount.toLocaleString()}</div>
-                    <div className="text-xs font-bold text-gray-500 mt-1">Paid at source: <span className="text-emerald-600">₹{bill.paidAmount.toLocaleString()}</span></div>
+
+                  <div className="w-full md:w-auto bg-gray-50 md:bg-transparent p-3 md:p-0 rounded-xl border border-gray-100 md:border-none md:text-right">
+                    <div className="font-black text-2xl text-gray-900">₹{bill.totalAmount.toLocaleString('en-IN')}</div>
+                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                      Paid at source: <span className="text-emerald-600">₹{bill.paidAmount.toLocaleString('en-IN')}</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* YEH NAYA SECTION HAI: ITEMS BOUGHT IN THIS BILL */}
-                <div className="mt-5 bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 border-b border-gray-50 pb-2 flex items-center gap-1.5">
-                    <Package size={12} /> Items Purchased
+                {/* ─── REAL ITEMS DETAIL (Direct From Database) ─── */}
+                <div>
+                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Package size={14} /> Items Purchased
                   </div>
-                  <div className="space-y-2">
-                    {bill.items && bill.items.map(item => (
-                      <div key={item.id} className="flex justify-between items-center text-sm font-medium text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">{item.qty}x</span>
-                          <span>{item.product ? item.product.name : 'Unknown Product'}</span>
+                  <div className="space-y-3">
+                    {bill.items && bill.items.map(item => {
+                      const baseName = item.product ? item.product.name : 'Unknown Product';
+                      const prodName = item.customLabel || baseName; // Ab custom label dikhega
+                      const baseUnitText = item.product?.unit || "Unit";
+                      
+                      const displayUnit = item.enteredUnit && item.enteredUnit !== "Base" ? item.enteredUnit : baseUnitText;
+                      const displayRate = item.enteredPrice || item.buyPrice;
+                      const displayQty = item.enteredQty || item.qty;
+                      
+                      const itemTotal = item.enteredPrice ? (item.enteredQty * item.enteredPrice) : (item.qty * item.buyPrice);
+                      const showSubtext = item.enteredUnit && item.enteredUnit !== "Base" && item.enteredUnit !== "KG" && item.enteredUnit !== "Gram" && item.enteredUnit !== "Ltr" && item.enteredUnit !== "ml";
+
+                      return (
+                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-300 transition-colors">
+                          <div>
+                            <div className="font-black text-sm text-gray-900">{prodName}</div>
+                            {item.customLabel && <div className="text-[9px] text-gray-400 uppercase tracking-widest mt-0.5">Base: {baseName}</div>}
+                            <div className="text-[10px] font-bold text-gray-500 mt-1.5 flex flex-wrap items-center gap-2 uppercase tracking-widest">                               <span className="bg-white px-2 py-1 rounded-md border border-gray-200 text-amber-700 font-black shadow-sm">
+                                 {displayQty} {displayUnit}
+                               </span>
+                               {showSubtext && <span>(Total {item.qty} {baseUnitText})</span>}
+                            </div>
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <div className="font-black text-lg text-gray-900">₹{itemTotal.toLocaleString('en-IN')}</div>
+                            <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Rate: ₹{displayRate.toLocaleString('en-IN')}/{displayUnit}</div>
+                          </div>
                         </div>
-                        <span className="font-bold text-gray-900">₹{(item.qty * item.buyPrice).toLocaleString()}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -302,31 +370,70 @@ export default function SupplierPassbook() {
 
         {/* TAB 3: PAYMENT RECORDS */}
         {activeTab === "payments" && (
-          <div className="p-6 space-y-3">
+          <div className="p-4 md:p-6 space-y-3 bg-gray-50/30">
             {supplier.payments.length === 0 ? (
-               <p className="text-gray-400 font-medium text-center py-10">No payment records found.</p>
+               <div className="flex flex-col items-center justify-center py-20 text-gray-300">
+                 <ArrowUpRight size={48} strokeWidth={1} className="mb-4 opacity-50"/>
+                 <p className="font-bold">No payment records found.</p>
+               </div>
             ) : (
               supplier.payments.map(payment => (
-                <div key={payment.id} className="flex justify-between items-center bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
+                <div key={payment.id} className="flex justify-between items-center bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:border-emerald-200 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl flex items-center justify-center shrink-0">
                       <ArrowUpRight size={18} />
                     </div>
                     <div>
-                      <div className="font-bold text-gray-900">Payment Settled</div>
-                      <div className="text-xs font-bold text-gray-500 mt-0.5">
-                         {new Date(payment.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric'})}
+                      <div className="font-black text-gray-900 text-sm">Payment Sent</div>
+                      <div className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">
+                         {new Date(payment.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}
                       </div>
                     </div>
                   </div>
-                  <div className="font-black text-2xl text-emerald-600">- ₹{payment.amount.toLocaleString()}</div>
+                  <div className="font-black text-xl text-emerald-600">₹{payment.amount.toLocaleString('en-IN')}</div>
                 </div>
               ))
             )}
           </div>
         )}
-
       </div>
+
+      {/* ─── DANGER ZONE: DELETE BILL MODAL ─── */}
+      {deleteModal.show && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col border border-rose-100">
+            
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-rose-100">
+                <AlertOctagon size={32} />
+              </div>
+              <h3 className="font-black text-gray-900 text-xl mb-2">Delete Invoice?</h3>
+              <p className="text-xs font-bold text-gray-500 leading-relaxed">
+                Kya aap waqai is parchi ko delete karna chahte hain? Isme se aaya hua <span className="text-rose-600 font-black">Stock Godam se wapas nikal jayega</span> aur Khata theek ho jayega.
+              </p>
+            </div>
+
+            <div className="p-5 border-t border-gray-100 bg-gray-50 flex gap-3">
+              <button 
+                onClick={() => setDeleteModal({ show: false, billId: null })}
+                disabled={isDeleting}
+                className="flex-1 py-3.5 font-black text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors uppercase tracking-widest text-xs disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDeleteBill}
+                disabled={isDeleting}
+                className="flex-[1.5] py-3.5 font-black text-white bg-rose-600 rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-600/30 transition-all flex justify-center items-center gap-2 active:scale-95 disabled:opacity-70 uppercase tracking-widest text-xs"
+              >
+                {isDeleting ? "Deleting..." : <><Trash2 size={16} /> Yes, Delete</>}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
