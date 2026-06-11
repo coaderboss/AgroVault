@@ -19,7 +19,8 @@ export function middleware(req) {
   }
 }
 
-// Yeh bouncer kin-kin darwazo par khada rahega:
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|icon-192x192.png|icon-512x512.png).*)',
+  ],
 };
