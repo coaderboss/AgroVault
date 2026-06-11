@@ -258,9 +258,9 @@ export default function CustomerProfile() {
       {/* ─── TAB CONTENT ─── */}
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
         
-        {/* TAB 1: PARCHI LOGS */}
+        {/* TAB 1: PARCHI LOGS (Mobile Optimized Horizontal Scroll) */}
         {activeTab === "transactions" && (
-          <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-4 md:p-6">
+          <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-4 md:p-6 overflow-hidden">
             <div className="mb-6 bg-gray-50 p-2.5 rounded-xl border border-gray-200 flex items-center shadow-inner">
               <Search size={18} className="text-gray-400 mx-3 shrink-0" />
               <input 
@@ -278,16 +278,15 @@ export default function CustomerProfile() {
               {filteredOrders.map((order) => {
                 const isPaid = order.status === "PAID";
                 return (
-                  // FIXED DIV STRUCTURE: Left aligned clean timeline
-                  <div key={order.id} className="relative flex items-start gap-4 md:gap-5 group">
-                    <div className="flex flex-col items-center">
+                  <div key={order.id} className="relative flex items-start gap-3 md:gap-5 group">
+                    <div className="hidden md:flex flex-col items-center">
                       <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 border-white shrink-0 shadow-sm z-10 ${isPaid ? 'bg-emerald-500' : 'bg-rose-500'}`}>
                         <ReceiptText size={14} className="text-white" />
                       </div>
                       <div className="w-[2px] h-full bg-gray-100 absolute top-10 -z-0"></div>
                     </div>
                     
-                    <div className="flex-1 bg-white p-4 md:p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group-hover:border-gray-200 mb-2">
+                    <div className="flex-1 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all w-full overflow-hidden mb-2">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-50">
                         <div>
                           <div className="flex items-center gap-2">
@@ -295,10 +294,10 @@ export default function CustomerProfile() {
                               #{order.id.slice(-6)}
                             </span>
                             <span className="text-xs font-bold text-gray-400">
-                              {new Date(order.createdAt).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}
+                              {new Date(order.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric'})}
                             </span>
                           </div>
-                          <div className="text-sm font-black text-gray-900 mt-2">Bill Amount: ₹{order.totalAmount.toLocaleString('en-IN')}</div>
+                          <div className="text-sm font-black text-gray-900 mt-2">Bill: ₹{order.totalAmount.toLocaleString('en-IN')}</div>
                         </div>
                         
                         <div className="flex items-center gap-2">
@@ -321,34 +320,34 @@ export default function CustomerProfile() {
                         </div>
                       </div>
                       
-                      <div className="text-xs font-bold text-gray-600 space-y-2 mb-4">
-                        {order.items.map(i => {
-                          const baseName = i.product ? i.product.name : 'Unknown Product';
-                          const displayName = i.customLabel || baseName;
-                          const displayQty = i.enteredQty || i.qty;
-                          const displayUnit = i.enteredUnit && i.enteredUnit !== "Base" ? i.enteredUnit : (i.product?.unit || "Unit");
-                          const displayRate = i.enteredPrice || i.priceAtSale;
-                          const itemTotal = i.enteredPrice ? (i.enteredQty * i.enteredPrice) : (i.qty * i.priceAtSale);
-                          const showSubtext = i.enteredUnit && i.enteredUnit !== "Base" && i.enteredUnit !== "KG" && i.enteredUnit !== "Gram" && i.enteredUnit !== "Ltr" && i.enteredUnit !== "ml";
+                      {/* ─── MOBILE OPTIMIZED HORIZONTAL SCROLL ─── */}
+                      <div className="text-xs font-bold text-gray-600 space-y-2 mb-4 overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-track]:bg-gray-50">
+                        <div className="min-w-[280px]">
+                          {order.items.map(i => {
+                            const baseName = i.product ? i.product.name : 'Unknown';
+                            const displayName = i.customLabel || baseName;
+                            const displayQty = i.enteredQty || i.qty;
+                            const displayUnit = i.enteredUnit && i.enteredUnit !== "Base" ? i.enteredUnit : (i.product?.unit || "Unit");
+                            const displayRate = i.enteredPrice || i.priceAtSale;
+                            const itemTotal = i.enteredPrice ? (i.enteredQty * i.enteredPrice) : (i.qty * i.priceAtSale);
 
-                          return (
-                          <div key={i.id} className="flex justify-between items-start bg-gray-50/50 p-3 rounded-xl border border-gray-100">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-black text-gray-800">{displayName}</span>
-                              {i.customLabel && <span className="text-[9px] text-gray-400 uppercase tracking-widest mt-0.5">Base: {baseName}</span>}
-                              <span className="text-[10px] text-gray-500 uppercase tracking-widest mt-1.5 bg-white w-fit px-2 py-0.5 rounded shadow-sm border border-gray-200">
-                                {displayQty} {displayUnit} @ ₹{displayRate}/{displayUnit}
-                                {showSubtext && ` (${i.qty} ${i.product?.unit || 'Unit'} Total)`}
-                              </span>
+                            return (
+                            <div key={i.id} className="flex justify-between items-center bg-gray-50/50 p-2.5 rounded-xl border border-gray-100 mb-2">
+                              <div className="flex flex-col pr-4">
+                                <span className="text-sm font-black text-gray-800 whitespace-nowrap">{displayName}</span>
+                                <span className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
+                                  {displayQty} {displayUnit} @ ₹{displayRate}
+                                </span>
+                              </div>
+                              <span className="font-black text-gray-900 text-sm">₹{itemTotal.toLocaleString('en-IN')}</span>
                             </div>
-                            <span className="font-black text-gray-900 text-sm">₹{itemTotal.toLocaleString('en-IN')}</span>
-                          </div>
-                        )})}
+                          )})}
+                        </div>
                       </div>
                       
                       <div className="flex justify-between text-xs font-black bg-gray-50 p-3 rounded-xl border border-gray-100">
-                        <span className="text-emerald-600 flex items-center gap-1"><Check size={14}/> Paid: ₹{order.paidAmount.toLocaleString('en-IN')}</span>
-                        <span className="text-rose-600 flex items-center gap-1">Due: ₹{(order.totalAmount - order.paidAmount).toLocaleString('en-IN')}</span>
+                        <span className="text-emerald-600">Paid: ₹{order.paidAmount.toLocaleString('en-IN')}</span>
+                        <span className="text-rose-600">Due: ₹{(order.totalAmount - order.paidAmount).toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   </div>
@@ -402,28 +401,56 @@ export default function CustomerProfile() {
           </div>
         )}
 
-        {/* TAB 3: ANALYTICS */}
+        {/* TAB 3: ANALYTICS OVERVIEW (Flash Feed) */}
         {activeTab === "analytics" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div className="bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm relative overflow-hidden group hover:border-amber-200 transition-colors">
-               <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-50 rounded-full blur-2xl group-hover:bg-amber-100 transition-colors"></div>
-               <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4 border border-amber-100">
-                 <Layers size={20} />
+          <div className="space-y-6">
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
+               <div className="bg-white p-5 md:p-6 rounded-[1.5rem] border border-gray-100 shadow-sm relative overflow-hidden group hover:border-amber-200 transition-colors">
+                 <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-50 rounded-full blur-2xl group-hover:bg-amber-100 transition-colors"></div>
+                 <Layers size={20} className="text-amber-500 mb-3" />
+                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Bills</div>
+                 <div className="text-2xl md:text-3xl font-black text-gray-900 mt-1">{profile.orders.length}</div>
                </div>
-               <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Purchase Frequency</div>
-               <div className="text-3xl font-black text-gray-900 mt-1">{profile.orders.length} <span className="text-sm font-bold text-gray-400">bills</span></div>
-             </div>
-             
-             <div className="bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm relative overflow-hidden group hover:border-emerald-200 transition-colors">
-               <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors"></div>
-               <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 border border-emerald-100">
-                 <TrendingUp size={20} />
+               
+               <div className="bg-white p-5 md:p-6 rounded-[1.5rem] border border-gray-100 shadow-sm relative overflow-hidden group hover:border-emerald-200 transition-colors">
+                 <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors"></div>
+                 <TrendingUp size={20} className="text-emerald-500 mb-3" />
+                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Avg. Bill Value</div>
+                 <div className="text-2xl md:text-3xl font-black text-gray-900 mt-1">
+                   ₹{profile.orders.length > 0 ? Math.round(profile.totalPurchased / profile.orders.length).toLocaleString('en-IN') : 0}
+                 </div>
                </div>
-               <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Average Bill Value</div>
-               <div className="text-3xl font-black text-gray-900 mt-1">
-                 ₹{profile.orders.length > 0 ? Math.round(profile.totalPurchased / profile.orders.length).toLocaleString('en-IN') : 0}
-               </div>
-             </div>
+            </div>
+
+            {/* Favorite / Top Items Feed */}
+            <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-4 md:p-6">
+              <h4 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <ReceiptText size={14}/> Top Purchased Items
+              </h4>
+              <div className="space-y-3">
+                {profile.orders.flatMap(o => o.items)
+                  .reduce((acc, item) => {
+                    const name = item.customLabel || (item.product ? item.product.name : 'Unknown');
+                    const existing = acc.find(i => i.name === name);
+                    if (existing) { existing.count += 1; existing.qty += (item.enteredQty || item.qty); }
+                    else acc.push({ name, count: 1, qty: (item.enteredQty || item.qty), unit: (item.enteredUnit || 'Unit') });
+                    return acc;
+                  }, [])
+                  .sort((a, b) => b.count - a.count)
+                  .slice(0, 5) // Top 5 items dikhayega
+                  .map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                      <div className="font-black text-sm text-gray-800">{item.name}</div>
+                      <div className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase tracking-widest">
+                        Total: {item.qty} {item.unit}
+                      </div>
+                    </div>
+                  ))
+                }
+                {profile.orders.length === 0 && <p className="text-xs font-bold text-gray-400 text-center py-4">No data available yet.</p>}
+              </div>
+            </div>
           </div>
         )}
 
