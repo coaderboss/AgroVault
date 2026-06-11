@@ -402,66 +402,147 @@ export default function PointOfSale() {
         </div>
       )}
 
-      {/* ─── GENERATED SLIP MODAL (Retained & Optimized) ─── */}
+     {/* ─── GENERATED SLIP MODAL (Premium Thermal Design) ─── */}
       {generatedSlip && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm animate-in fade-in duration-200 print:bg-transparent print:p-0">
-          {/* Slip UI remains structurally similar but styled sharper */}
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 relative print:shadow-none print:border-none print:w-full print:max-w-full">
-            <div className="text-center border-b border-gray-200 pb-4 mb-4">
-              <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">{generatedSlip.shopName}</h2>
-              <p className="text-[10px] font-black text-gray-400 tracking-[0.2em] mt-1">CASH / CREDIT MEMO</p>
-              <div className="text-xs font-bold text-gray-500 mt-2 bg-gray-50 py-1 rounded-md border border-gray-100">Bill No: #{generatedSlip.billId}</div>
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+          
+          {/* ✅ THE RECEIPT ITSELF ✅ */}
+          <div 
+            id="print-receipt" 
+            className="bg-white p-5 sm:p-6 w-full max-w-[340px] mx-auto text-gray-900 shadow-2xl rounded-2xl relative overflow-hidden font-sans"
+          >
+            {/* ─── HEADER ─── */}
+            <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4">
+              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-widest leading-tight text-gray-900">
+                {generatedSlip.shopName}
+              </h2>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.1em] mt-1.5">
+                Cash / Credit Memo
+              </p>
             </div>
-            <div className="mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100 print:bg-white print:border-gray-300">
-              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer Detail</div>
-              <div className="font-black text-gray-800 text-sm mt-1">{generatedSlip.customerName}</div>
-              {generatedSlip.customerMobile && <div className="text-xs font-bold text-gray-500 mt-0.5">+91 {generatedSlip.customerMobile}</div>}
-            </div>
-            <div className="space-y-3 mb-6 min-h-[100px]">
-              <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-1.5 gap-2">
-                <span className="flex-1">Item Detail</span>
-                <span className="w-20 text-center">Qty/Rate</span>
-                <span className="w-20 text-right">Amount</span>
+
+            {/* ─── BILL INFO ─── */}
+            <div className="flex justify-between items-end mb-4 text-xs font-bold text-gray-600">
+              <div>
+                <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-0.5">Bill No.</div>
+                <div className="text-gray-900 font-black">#{generatedSlip.billId}</div>
               </div>
-              {generatedSlip.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-start text-sm font-bold text-gray-800 border-b border-gray-50 pb-2 gap-2">
-                  <div className="flex-1 min-w-0 pr-1 leading-tight">
-                    <div className="break-words leading-snug">{item.customLabel}</div>
-                    {item.customLabel !== item.name && <div className="text-[9px] text-gray-400 mt-0.5 truncate">{item.name}</div>}
-                  </div>
-                  <div className="w-20 text-center text-[10px] text-gray-500 shrink-0">
-                    {item.enteredQty} <span className="uppercase text-[9px]">{item.enteredUnit}</span><br/>× ₹{item.priceAtSale}
-                  </div>
-                  <div className="w-20 text-right font-black text-gray-900 shrink-0">₹{(item.enteredQty * item.priceAtSale).toLocaleString('en-IN')}</div>
-                </div>
-              ))}
+              <div className="text-right">
+                <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-0.5">Date</div>
+                <div className="text-gray-900 font-black">{generatedSlip.date.split(',')[0]}</div>
+              </div>
             </div>
-            <div className="border-t border-dashed border-gray-300 pt-4 space-y-2 text-sm bg-gray-50 -mx-6 px-6 pb-6 -mb-6 print:bg-transparent print:mx-0 print:px-0">
-              <div className="flex justify-between text-gray-600 font-bold">
+
+            {/* ─── CUSTOMER INFO ─── */}
+            {generatedSlip.customerName !== "Walk-in Customer" && (
+              <div className="border border-gray-200 p-3 rounded-lg border-dashed mb-5">
+                <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Billed To</div>
+                <div className="font-black text-sm text-gray-900 uppercase">{generatedSlip.customerName}</div>
+                {generatedSlip.customerMobile && <div className="text-xs font-bold text-gray-600 mt-0.5">+91 {generatedSlip.customerMobile}</div>}
+              </div>
+            )}
+
+            {/* ─── ITEMS TABLE ─── */}
+            <div className="mb-5 min-h-[120px]">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-gray-900">
+                    <th className="py-2 text-[10px] font-black text-gray-900 uppercase tracking-widest w-1/2">Item Detail</th>
+                    <th className="py-2 text-[10px] font-black text-gray-900 uppercase tracking-widest text-right">Qty/Rate</th>
+                    <th className="py-2 text-[10px] font-black text-gray-900 uppercase tracking-widest text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-dashed divide-gray-200">
+                  {generatedSlip.items.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="py-3 pr-2">
+                        <div className="font-black text-xs text-gray-900 uppercase leading-snug break-words">
+                          {item.customLabel}
+                        </div>
+                        {item.customLabel !== item.name && (
+                           <div className="text-[9px] text-gray-500 mt-0.5 uppercase tracking-wide truncate">
+                             {item.name}
+                           </div>
+                        )}
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="font-black text-xs text-gray-900">
+                          {item.enteredQty} <span className="text-[10px] font-bold">{item.enteredUnit}</span>
+                        </div>
+                        <div className="text-[9px] font-bold text-gray-500 mt-0.5">₹{item.priceAtSale}</div>
+                      </td>
+                      <td className="py-3 text-right font-black text-xs text-gray-900">
+                        ₹{(item.enteredQty * item.priceAtSale).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ─── TOTALS SECTION ─── */}
+            <div className="border-t-2 border-gray-900 pt-3 space-y-2">
+              <div className="flex justify-between items-center text-sm font-bold text-gray-600">
                 <span>Grand Total</span>
-                <span className="text-gray-900 text-xl font-black">₹{generatedSlip.total.toLocaleString('en-IN')}</span>
+                <span className="font-black text-gray-900">₹{generatedSlip.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex justify-between text-emerald-600 font-bold">
+              <div className="flex justify-between items-center text-sm font-bold text-emerald-600">
                 <span>Amount Paid</span>
-                <span>₹{generatedSlip.paid.toLocaleString('en-IN')}</span>
+                <span>₹{generatedSlip.paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               {generatedSlip.due > 0 && (
-                <div className="flex justify-between text-rose-600 font-black pt-3 mt-1 border-t border-gray-200">
-                  <span>Balance Due</span>
-                  <span>₹{generatedSlip.due.toLocaleString('en-IN')}</span>
+                <div className="flex justify-between items-center bg-gray-900 text-white p-2.5 rounded-lg mt-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-300">Balance Due</span>
+                  <span className="font-black text-base">₹{generatedSlip.due.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
-               <div className="mt-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest pt-4 border-t border-gray-200">
-                Billed By: <span className="text-gray-600">{generatedSlip.billedBy}</span>
-              </div>
             </div>
-            <div className="mt-6 flex gap-3 print:hidden absolute bottom-6 inset-x-6">
-              <button onClick={() => window.print()} className="flex-1 py-3.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-black text-sm uppercase tracking-widest rounded-xl transition-colors shadow-sm">Print</button>
-              <button onClick={() => setGeneratedSlip(null)} className="flex-1 py-3.5 bg-gray-900 hover:bg-black text-white font-black text-sm uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-gray-900/20">Done</button>
+
+            {/* ─── FOOTER ─── */}
+            <div className="mt-6 text-center border-t-2 border-dashed border-gray-300 pt-3">
+              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">
+                Billed By: {generatedSlip.billedBy}
+              </p>
+              <p className="text-[10px] font-black text-gray-800 uppercase tracking-widest">
+                Thank you for visiting!
+              </p>
+            </div>
+            
+            {/* ─── ACTION BUTTONS (Hidden during print) ─── */}
+            <div className="mt-6 flex gap-3 print-hide-element">
+              <button onClick={() => window.print()} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-black text-xs uppercase tracking-widest rounded-xl transition-colors border border-gray-300">Print</button>
+              <button onClick={() => setGeneratedSlip(null)} className="flex-1 py-3 bg-gray-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest rounded-xl transition-colors shadow-md">Done</button>
             </div>
           </div>
+          
         </div>
       )}
+
+      {/* ─── PRINT CSS MAGIC (Hides everything except the receipt) ─── */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #print-receipt, #print-receipt * {
+            visibility: visible;
+          }
+          #print-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .print-hide-element {
+            display: none !important;
+          }
+        }
+      `}</style>
+      
     </div>
   );
 }
