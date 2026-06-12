@@ -8,7 +8,8 @@ import axios from "axios";
 import { 
   LayoutDashboard, ReceiptText, NotebookTabs, Boxes, 
   Users, Bell, Search, Truck, PackagePlus, LogOut, 
-  UserCircle, Store, Phone, X, Download, ShieldAlert, Settings, Info, AlertTriangle, CheckCircle2, ArrowLeft, ShieldCheck
+  UserCircle, Store, Phone, X, Download, ShieldAlert, Settings, Info, AlertTriangle, CheckCircle2, ArrowLeft, ShieldCheck,
+  Megaphone, Send, Clock, Activity 
 } from "lucide-react";
 
 export default function RootLayout({ children }) {
@@ -28,6 +29,54 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
   // ─── PWA INSTALL STATES ───
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstallable, setIsInstallable] = useState(false);
+
+  // ─── LIVE FEED (NOTIFICATION) STATES & LOGIC ───
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
+  const [newAnnouncement, setNewAnnouncement] = useState("");
+  const [sendingNotif, setSendingNotif] = useState(false);
+
+  const fetchNotifications = async () => {
+    setLoadingNotifs(true);
+    try {
+      const token = Cookies.get("auth_token");
+      const res = await axios.get("https://agrovault.onrender.com/api/notifications", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(res.data.data || []);
+    } catch (error) {
+      console.error("Notif fetch error", error);
+    } finally {
+      setLoadingNotifs(false);
+    }
+  };
+
+  const handleBellClick = () => {
+    if (!isNotifOpen) fetchNotifications();
+    setIsNotifOpen(!isNotifOpen);
+    setIsProfileOpen(false); // Bell khule toh profile band ho jaye
+  };
+
+  const handleSendAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!newAnnouncement.trim()) return;
+    setSendingNotif(true);
+    try {
+      const token = Cookies.get("auth_token");
+      await axios.post("https://agrovault.onrender.com/api/notifications", {
+        message: newAnnouncement,
+        type: "ANNOUNCEMENT"
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      
+      setNewAnnouncement("");
+      fetchNotifications(); // Turant list refresh karo
+    } catch (error) {
+      showPremiumAlert("error", "Message bhejne mein error aaya");
+    } finally {
+      setSendingNotif(false);
+    }
+  };
 
   const showPremiumAlert = (type, message) => {
     setAlertInfo({ show: true, type, message });
@@ -199,7 +248,11 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
                   </button>
                 )}
 
-                <button className="relative p-2.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"><Bell size={20} /><span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span></button>           {/* Mobile Profile Avatar */}
+               <button onClick={handleBellClick} className="relative p-2.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm transition-all active:scale-95">
+                <Bell size={20} />
+                {notifications.length > 0 && <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white animate-pulse"></span>}
+                 </button>                  
+                   {/* Mobile Profile Avatar */}
                 <div onClick={() => setIsProfileOpen(true)} className="md:hidden w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold shadow-sm cursor-pointer">
                   {userData.name.charAt(0).toUpperCase()}
                 </div>
@@ -238,6 +291,75 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
             </nav>
           </div>
         </div>
+
+        {/* ─── LIVE SHOP FEED (NOTIFICATIONS PANEL) ─── */}
+        {isNotifOpen && (
+          <>
+            {/* Mobile background overlay */}
+            <div className="md:hidden fixed inset-0 z-[190] bg-gray-900/20 backdrop-blur-sm" onClick={() => setIsNotifOpen(false)}></div>
+            
+            <div className="fixed top-[70px] md:top-[85px] right-2 md:right-8 z-[195] w-[95%] md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden animate-in slide-in-from-top-4 fade-in duration-200 flex flex-col max-h-[80vh]">
+              
+              <div className="bg-gray-900 p-4 flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-2 text-white">
+                  <Activity size={18} className="text-emerald-400" />
+                  <h3 className="font-black text-sm tracking-widest uppercase">Live Shop Feed</h3>
+                </div>
+                <button onClick={() => setIsNotifOpen(false)} className="text-gray-400 hover:text-white transition-colors"><X size={18}/></button>
+              </div>
+
+              {/* Owner Broadcast Feature */}
+              {userData.role === "OWNER" && (
+                <div className="p-3 bg-gray-50 border-b border-gray-100 shrink-0">
+                  <form onSubmit={handleSendAnnouncement} className="flex gap-2">
+                    <input 
+                      type="text" placeholder="Broadcast a message to staff..." 
+                      value={newAnnouncement} onChange={(e) => setNewAnnouncement(e.target.value)}
+                      className="flex-1 bg-white border border-gray-200 px-3 py-2 rounded-xl text-xs font-bold outline-none focus:border-emerald-500"
+                    />
+                    <button type="submit" disabled={sendingNotif || !newAnnouncement.trim()} className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white p-2 rounded-xl transition-colors shadow-sm">
+                      <Send size={16} />
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* Feed List */}
+              <div className="p-2 flex-1 overflow-y-auto space-y-1 bg-gray-50/50">
+                {loadingNotifs ? (
+                   <div className="py-10 text-center text-gray-400 font-bold text-xs animate-pulse">Loading Live Feed...</div>
+                ) : notifications.length === 0 ? (
+                   <div className="py-10 flex flex-col items-center justify-center text-gray-400">
+                     <Bell size={32} className="mb-2 opacity-20" />
+                     <p className="font-bold text-xs">No recent activity in the last 36 hours.</p>
+                   </div>
+                ) : (
+                  notifications.map((notif) => (
+                    <div key={notif.id} className="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex gap-3 hover:border-emerald-200 transition-colors">
+                      <div className="shrink-0 mt-0.5">
+                        {notif.type === 'ANNOUNCEMENT' ? (
+                          <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center border border-amber-100"><Megaphone size={14}/></div>
+                        ) : notif.type === 'ALERT' ? (
+                          <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center border border-rose-100"><AlertTriangle size={14}/></div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center border border-emerald-100"><ReceiptText size={14}/></div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[13px] font-bold text-gray-800 leading-snug">{notif.message}</p>
+                        <div className="flex items-center gap-2 mt-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                          <span className="text-gray-500">{notif.createdBy}</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-0.5"><Clock size={10}/> {new Date(notif.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ─── PREMIUM MINIMALIST PROFILE MODAL ─── */}
         {isProfileOpen && (
