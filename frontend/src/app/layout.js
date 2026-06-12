@@ -178,8 +178,8 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#064e3b" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <meta name="theme-color" content="#b9dbd2" />
+        <link rel="apple-touch-icon" href="/icon.png" />
       </head>
       <body className="bg-gray-50 font-sans text-gray-900 antialiased overflow-hidden">
         <div className="flex h-[100dvh] w-full">
