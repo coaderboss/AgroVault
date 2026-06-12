@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_NAME = "gallavault-cache-v2";
+const CACHE_NAME = "gallavault-cache-v6";
 
 const urlsToCache = [
   '/',
