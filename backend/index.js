@@ -421,11 +421,16 @@ app.delete('/api/products/:id', auth, async (req, res) => {
   } catch (error) {
     console.error("Delete API Error:", error);
     
-    // 🚨 PRO TIP: Agar item kisi "Parchi" (Order) mein use ho chuka hoga, toh Prisma foreign key error dega (P2003)
-    if (error.code === 'P2003') {
+    // 🚨 SMART FOREIGN KEY CHECK (Naye Prisma update ke hisaab se)
+    const isForeignKeyError = 
+      error.code === 'P2003' || 
+      (error.cause && error.cause.originalCode === '23001') ||
+      (error.message && error.message.includes('violates RESTRICT setting'));
+
+    if (isForeignKeyError) {
       return res.status(400).json({ 
         success: false, 
-        message: "Yeh item pehle se bills/parchi mein use ho chuka hai. Isey delete karne se purane bills kharab ho jayenge. Kripya iska stock 0 kar dein." 
+        message: "Yeh item pehle kisi Parchi mein bik chuka hai. Isey delete kiya toh purane bill kharab ho jayenge. Kripya iska Stock 0 kar dein!" 
       });
     }
 
