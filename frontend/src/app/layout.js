@@ -167,7 +167,7 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
   const navItems = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard, color: "text-blue-600", bg: "bg-blue-50" },
     { name: "New Sale", path: "/sales", icon: ReceiptText, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { name: "Buy Stock", path: "/purchases/new", icon: PackagePlus, color: "text-purple-600", bg: "bg-purple-50" },
+    { name: "Buy Stock", path: "/purchases/new", icon: PackagePlus, color: "text-amber-600", bg: "bg-amber-50" },  
     { name: "Ledger", path: "/udhaar", icon: NotebookTabs, color: "text-rose-600", bg: "bg-rose-50" },
     { name: "Inventory", path: "/inventory", icon: Boxes, color: "text-indigo-600", bg: "bg-indigo-50" },
     { name: "Customers", path: "/customers", icon: Users, color: "text-amber-600", bg: "bg-amber-50" },

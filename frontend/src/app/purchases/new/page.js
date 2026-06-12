@@ -36,6 +36,7 @@ export default function NewPurchase() {
     buyPrice: "", sellPrice: "", stockQty: 0
   };
   const [newProduct, setNewProduct] = useState(baseProductState);
+  
 
   // Auto Calculate Logic for Packaged
   useEffect(() => {
@@ -96,22 +97,36 @@ export default function NewPurchase() {
     (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // ─── SMART UNIT ADDER STATES ───
+ // ─── SMART UNIT ADDER STATES ───
   const [activeItem, setActiveItem] = useState(null);
   const [draftConfig, setDraftConfig] = useState({ qty: 1, unit: "KG", customMultiplier: 50, customLabel: "", price: 0 });
 
-  // ─── SMART CART LOGIC (With Bori/Bag Support) ───
+  // ─── NAYA: BULK PACKET ENGINE STATE & LOGIC ───
+  const [bulkCalc, setBulkCalc] = useState({ active: false, outerCount: "", innerCount: "" });
+
+  useEffect(() => {
+    if (bulkCalc.active && bulkCalc.outerCount && bulkCalc.innerCount) {
+        const totalPacks = Number(bulkCalc.outerCount) * Number(bulkCalc.innerCount);
+        // 👈 BUG FIX: Jaise hi box tick hoga, Unit apne aap "Packet" ho jayega!
+        setDraftConfig(prev => ({ ...prev, qty: totalPacks, unit: "Packet" })); 
+    }
+  }, [bulkCalc.outerCount, bulkCalc.innerCount, bulkCalc.active]);
+
+  // ─── SMART CART LOGIC (With Bori/Bag/Packet Support) ───
   const getMultiplier = (unit, customMult) => {
     if (unit === "Gram" || unit === "ml") return 0.001;
     if (unit === "Quintal") return 100;
     if (unit === "Ton") return 1000;
     if (unit === "Custom_Bag") return Number(customMult) || 1;
     if (unit === "Dozen") return 12;
+    // 👈 BUG FIX: System ko pata chal gaya ki 1 packet mein kitne KG hain!
+    if (unit === "Packet") return Number(activeItem?.qtyPerPackage) || 1; 
     return 1; 
   };
 
-  const openSmartAdder = (product) => {
+ const openSmartAdder = (product) => {
     setActiveItem(product);
+    setBulkCalc({ active: false, outerCount: "", innerCount: "" }); // 👈 NAYA: Reset Calculator
     setDraftConfig({ 
       qty: 1, 
       unit: product.unit || "KG", 
@@ -482,8 +497,7 @@ export default function NewPurchase() {
                 {newProduct.measureType === "packaged" && (
                   <div className="space-y-5 animate-in fade-in duration-300">
                     <div className="grid grid-cols-3 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                      <div><label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Pack Type</label><select value={newProduct.packageUnit} onChange={(e) => setNewProduct({...newProduct, packageUnit: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg font-bold text-sm outline-none"><option value="Bag">Bora</option><option value="Box">Peti</option></select></div>
-                      <div><label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 text-center">Inside Wt.</label><input type="number" required value={newProduct.qtyPerPackage} onChange={(e) => setNewProduct({...newProduct, qtyPerPackage: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg font-black text-sm text-center outline-none" placeholder="e.g. 50" /></div>
+                      <div><label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Pack Type</label><select value={newProduct.packageUnit} onChange={(e) => setNewProduct({...newProduct, packageUnit: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg font-bold text-sm outline-none focus:border-amber-500"><option value="Bag">Bora (Bag)</option><option value="Box">Peti (Box)</option><option value="Packet">Packet (Pkt)</option></select></div>                      <div><label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 text-center">Inside Wt.</label><input type="number" required value={newProduct.qtyPerPackage} onChange={(e) => setNewProduct({...newProduct, qtyPerPackage: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg font-black text-sm text-center outline-none" placeholder="e.g. 50" /></div>
                       <div><label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Inside Unit</label><select value={newProduct.baseUnit} onChange={(e) => setNewProduct({...newProduct, baseUnit: e.target.value})} className="w-full p-2.5 border border-gray-200 rounded-lg font-bold text-sm outline-none"><option value="KG">KG</option><option value="Ltr">Litre</option></select></div>
                     </div>
 
@@ -514,15 +528,14 @@ export default function NewPurchase() {
           </div>
         </div>
       )}
-
-      {/* ─── THE SMART UNIT ADDER MODAL (PURCHASE SPECIFIC - DARK GOLD) ─── */}
+{/* ─── THE SMART UNIT ADDER MODAL (PURCHASE SPECIFIC - DARK GOLD) ─── */}
       {activeItem && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[#0f0f0f]/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-[#1a1a1a] w-full max-w-sm rounded-[2rem] shadow-[0_0_50px_rgba(245,158,11,0.15)] border border-[#333] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             
             <div className="p-5 border-b border-[#333] flex justify-between items-start bg-[#0f0f0f] shrink-0">
               <div>
-                <h3 className="font-black text-white text-xl leading-tight pr-4">{activeItem.name}</h3>
+                <h3 className="font-black text-white text-xl leading-tight pr-4">{activeItem?.name}</h3>
                 <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mt-1.5">Adding to Inventory</p>
               </div>
               <button onClick={() => setActiveItem(null)} className="p-2 bg-[#222] rounded-full border border-[#333] text-gray-400 hover:text-white shadow-sm shrink-0"><X size={18}/></button>
@@ -542,14 +555,15 @@ export default function NewPurchase() {
                     value={draftConfig.unit} onChange={(e) => setDraftConfig({...draftConfig, unit: e.target.value})}
                     className="w-1/2 p-3.5 bg-[#0f0f0f] border border-[#333] rounded-xl font-bold text-sm text-gray-300 outline-none focus:border-amber-500 transition-colors"
                   >
-                    {["KG", "Gram"].includes(activeItem.unit) && (
-                      <><option value="KG">Kilo (KG)</option><option value="Gram">Gram (g)</option><option value="Custom_Bag">Bag / Bori</option><option value="Quintal">Quintal</option><option value="Ton">Ton</option></>
+                    {/* 👈 BUG FIX: Har jagah Packet ka option add kar diya! */}
+                    {["KG", "Gram"].includes(activeItem?.unit) && (
+                      <><option value="KG">Kilo (KG)</option><option value="Gram">Gram (g)</option><option value="Custom_Bag">Bag / Bori</option><option value="Quintal">Quintal</option><option value="Ton">Ton</option><option value="Packet">Packet (Pkt)</option></>
                     )}
-                    {["Litre", "ML", "ml"].includes(activeItem.unit) && (
-                      <><option value="Litre">Litre (L)</option><option value="ml">ML</option></>
+                    {["Litre", "ML", "ml"].includes(activeItem?.unit) && (
+                      <><option value="Litre">Litre (L)</option><option value="ml">ML</option><option value="Packet">Packet (Pkt)</option></>
                     )}
-                    {!["KG", "Gram", "Litre", "ML", "ml"].includes(activeItem.unit) && (
-                      <><option value={activeItem.unit}>{activeItem.unit}</option><option value="Dozen">Dozen</option><option value="Box">Box</option></>
+                    {!["KG", "Gram", "Litre", "ML", "ml"].includes(activeItem?.unit) && (
+                      <><option value={activeItem?.unit}>{activeItem?.unit}</option><option value="Dozen">Dozen</option><option value="Box">Box</option><option value="Packet">Packet (Pkt)</option></>
                     )}
                   </select>
                 </div>
@@ -564,8 +578,24 @@ export default function NewPurchase() {
                         onChange={(e) => setDraftConfig({...draftConfig, customMultiplier: e.target.value})} 
                         className="w-16 p-1.5 rounded-lg text-sm font-black text-center text-white bg-[#0f0f0f] border border-amber-500/30 outline-none focus:border-amber-500" 
                       />
-                      <span className="text-[10px] font-black text-amber-500 uppercase">{activeItem.unit}</span>
+                      <span className="text-[10px] font-black text-amber-500 uppercase">{activeItem?.unit}</span>
                     </div>
+                  </div>
+                )}
+
+                {/* ─── DYNAMIC BULK PACKET CALCULATOR (Crash-Proof) ─── */}
+                {(draftConfig.unit === "Packet" || activeItem?.unit === "Packet" || activeItem?.packageUnit === "Packet") && (
+                  <div className="mt-3 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 animate-in fade-in zoom-in-95">
+                    <label className="flex items-center gap-2 text-[10px] font-black text-amber-500 uppercase cursor-pointer mb-2">
+                      <input type="checkbox" checked={bulkCalc.active} onChange={(e) => setBulkCalc({...bulkCalc, active: e.target.checked})} className="rounded text-amber-500 focus:ring-amber-500 w-4 h-4 accent-amber-500 bg-[#0f0f0f] border-amber-500/30"/>
+                      Packets Bori / Box ke andar hain? (Auto-Calculate)
+                    </label>
+                    {bulkCalc.active && (
+                      <div className="grid grid-cols-2 gap-3 mt-2 border-t border-amber-500/20 pt-3">
+                        <div><label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Total Bori / Box</label><input type="number" value={bulkCalc.outerCount} onChange={e => setBulkCalc({...bulkCalc, outerCount: e.target.value})} className="w-full p-2 bg-[#0f0f0f] border border-[#333] rounded-lg text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. 10"/></div>
+                        <div><label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Packets in 1 Bori</label><input type="number" value={bulkCalc.innerCount} onChange={e => setBulkCalc({...bulkCalc, innerCount: e.target.value})} className="w-full p-2 bg-[#0f0f0f] border border-[#333] rounded-lg text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. 20"/></div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -591,7 +621,7 @@ export default function NewPurchase() {
                   value={draftConfig.customLabel} onChange={(e) => setDraftConfig({...draftConfig, customLabel: e.target.value})}
                   className="w-full p-3.5 bg-[#0f0f0f] border border-[#333] rounded-xl font-bold text-sm text-white outline-none focus:border-amber-500 transition-colors placeholder-gray-600"
                 />
-                <p className="text-[9px] font-bold text-gray-500 mt-2 leading-relaxed">Leave empty to use original name. <span className="text-amber-500 font-black">{(Number(draftConfig.qty) * getMultiplier(draftConfig.unit, draftConfig.customMultiplier)) || 0} {activeItem.unit}</span> will be added to your inventory.</p>
+                <p className="text-[9px] font-bold text-gray-500 mt-2 leading-relaxed">Leave empty to use original name. <span className="text-amber-500 font-black">{(Number(draftConfig.qty) * getMultiplier(draftConfig.unit, draftConfig.customMultiplier)) || 0} {activeItem?.unit}</span> will be added to your inventory.</p>
               </div>
             </div>
 
@@ -603,7 +633,8 @@ export default function NewPurchase() {
           </div>
         </div>
       )}
-
+       
+       
     </div>
   );
 }
