@@ -193,23 +193,20 @@ export default function PointOfSale() {
   );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 pb-28 lg:pb-6 relative h-[calc(100vh-80px)]">
+    <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 pb-6 lg:pb-6 relative h-[calc(100vh-80px)]">
       
       {/* ─── LEFT: PRODUCT CATALOG (The Feed) ─── */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <div className="bg-white/80 backdrop-blur-md p-4 lg:p-6 rounded-[2rem] border border-gray-100 shadow-sm mb-4 shrink-0 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">Point of Sale</h1>
-            <p className="text-xs font-bold text-gray-400 mt-1">Tap products to configure and add.</p>
+       {/* COMPACT SEARCH BAR */}
+        <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm mb-3 shrink-0 flex items-center gap-3">
+          <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl shrink-0">
+            <Search size={20} strokeWidth={2.5} />
           </div>
-          <div className="relative w-full sm:w-80">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input 
-              type="text" placeholder="Search inventory..." 
-              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold text-gray-800 outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-inner"
-            />
-          </div>
+          <input 
+            type="text" placeholder="Search items..." 
+            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-transparent text-base font-bold text-gray-900 outline-none placeholder-gray-400"
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto pr-1 pb-20 lg:pb-0 scroll-smooth">
@@ -325,22 +322,41 @@ export default function PointOfSale() {
         </div>
       </div>
 
-      {/* ─── MOBILE ZOMATO-STYLE FLOATING CART BAR ─── */}
+      {/* ─── MOBILE SMART CART (Tokri Logic - Emerald Theme) ─── */}
       {!isCartOpen && (
-        <div className="lg:hidden fixed bottom-16 inset-x-4 z-40 animate-in slide-in-from-bottom-10">
-          <button 
-            onClick={() => setIsCartOpen(true)}
-            className="w-full bg-emerald-600 text-white p-4 rounded-2xl shadow-[0_10px_25px_rgba(16,185,129,0.4)] flex items-center justify-between font-black active:scale-95 transition-transform"
-          >
-            <div className="flex items-center gap-3">
-              <div className="bg-white/20 p-2 rounded-xl"><ShoppingCart size={20} /></div>
-              <div className="text-left leading-tight">
-                <div className="text-sm">{cart.length} Items</div>
-                <div className="text-[10px] text-emerald-200 uppercase tracking-widest mt-0.5">₹{subtotal} Total</div>
-              </div>
+        <div className="lg:hidden fixed bottom-6 z-40 animate-in slide-in-from-bottom-10 transition-all duration-300 pointer-events-none w-full">
+          
+          {/* CONDITION 1: KHALI CART (Sirf Gol Tokri Right Side Mein) */}
+          {cart.length === 0 ? (
+            <div className="absolute right-4 bottom-0 pointer-events-auto">
+              <button 
+                onClick={() => setIsCartOpen(true)}
+                className="bg-emerald-600 border-2 border-white text-white p-4 rounded-full shadow-[0_10px_25px_rgba(16,185,129,0.6)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+              >
+                <ShoppingCart size={24} strokeWidth={2.5} />
+              </button>
             </div>
-            <div className="flex items-center gap-1 text-sm">View Cart <ChevronRight size={18}/></div>
-          </button>
+          ) : (
+            
+          /* CONDITION 2: BHARA HUA CART (Zomato Style Bar Center Mein) */
+            <div className="px-4 pointer-events-auto">
+              <button 
+                onClick={() => setIsCartOpen(true)}
+                className="w-full bg-emerald-600 text-white p-3.5 rounded-2xl shadow-[0_10px_25px_rgba(16,185,129,0.5)] flex items-center justify-between font-black active:scale-95 transition-transform"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-xl"><ShoppingCart size={20} /></div>
+                  <div className="text-left leading-tight">
+                    <div className="text-sm">{cart.length} Items</div>
+                    <div className="text-[10px] text-emerald-100 uppercase tracking-widest mt-0.5">₹{subtotal.toLocaleString('en-IN')} Total</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs tracking-widest uppercase text-emerald-50 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20">
+                  View <ChevronRight size={16}/>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       )}
 

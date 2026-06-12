@@ -245,30 +245,32 @@ export default function NewPurchase() {
   );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 pb-28 lg:pb-6 relative h-[calc(100vh-80px)]">
+    <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 pb-6 lg:pb-6 relative h-[calc(100vh-80px)]">
       
       {/* ─── LEFT PANEL: PRODUCT CATALOG (Black & Gold Theme) ─── */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <div className="bg-[#0f0f0f] p-4 lg:p-6 rounded-[2rem] border border-[#222] shadow-xl mb-4 shrink-0 flex flex-col sm:flex-row justify-between items-center gap-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[50px] rounded-full pointer-events-none"></div>
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-black text-white tracking-tight flex items-center gap-2">
-              <PackagePlus className="text-amber-500" /> Restock Items
+        {/* COMPACT RESPONSIVE SEARCH HEADER (Dark Theme) */}
+        <div className="bg-[#0f0f0f] p-3 lg:p-5 rounded-2xl lg:rounded-[2rem] border border-[#222] shadow-xl mb-4 shrink-0 flex items-center justify-between gap-3 relative overflow-hidden">
+          {/* Desktop Title (Mobile par hide ho jayega) */}
+          <div className="hidden lg:block">
+            <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              <PackagePlus className="text-amber-500" /> Restock
             </h1>
-            <p className="text-[11px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Add inventory to your warehouse</p>
           </div>
-          <div className="relative w-full sm:w-80 flex gap-2">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" placeholder="Search products..." 
-                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-[#1a1a1a] border border-[#333] rounded-xl text-sm font-bold text-white outline-none focus:border-amber-500 transition-all placeholder-gray-500"
-              />
+          
+          {/* Search Input & Add Button */}
+          <div className="flex w-full lg:w-96 items-center gap-2">
+             <div className="bg-amber-500/10 text-amber-500 p-2.5 rounded-xl shrink-0 border border-amber-500/20">
+              <Search size={20} strokeWidth={2.5} />
             </div>
+            <input 
+              type="text" placeholder="Search inventory..." 
+              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent text-sm md:text-base font-bold text-white outline-none placeholder-gray-600"
+            />
             <button 
               onClick={() => setShowAddProductModal(true)}
-              className="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-3 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+              className="bg-amber-500 text-gray-900 p-2.5 rounded-xl transition-all active:scale-95 shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
             >
               <Plus size={20} className="font-black"/>
             </button>
@@ -396,19 +398,39 @@ export default function NewPurchase() {
         </div>
       </div>
 
-      {/* ─── MOBILE FLOATING CART BAR ─── */}
+      {/* ─── MOBILE SMART CART (Tokri Logic - Dark Theme) ─── */}
       {!isCartOpen && (
-        <div className="lg:hidden fixed bottom-16 inset-x-4 z-40 animate-in slide-in-from-bottom-10">
-          <button onClick={() => setIsCartOpen(true)} className="w-full bg-[#0f0f0f] border border-[#222] text-amber-500 p-4 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.5)] flex items-center justify-between font-black active:scale-95 transition-transform">
-            <div className="flex items-center gap-3">
-              <div className="bg-amber-500/10 p-2 rounded-xl border border-amber-500/20"><ShoppingCart size={20} /></div>
-              <div className="text-left leading-tight">
-                <div className="text-sm text-white">{cart.length} Items</div>
-                <div className="text-[10px] text-amber-500/80 uppercase tracking-widest mt-0.5">₹{totalAmount} Total</div>
-              </div>
+        <div className="lg:hidden fixed bottom-6 z-40 animate-in slide-in-from-bottom-10 transition-all duration-300 pointer-events-none w-full">
+          
+          {/* CONDITION 1: KHALI CART (Sirf Gol Tokri) */}
+          {cart.length === 0 ? (
+            <div className="absolute right-4 bottom-0 pointer-events-auto">
+              <button 
+                onClick={() => setIsCartOpen(true)}
+                className="bg-[#0f0f0f] border border-[#333] text-amber-500 p-4 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.6)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+              >
+                <ShoppingCart size={24} strokeWidth={2.5} />
+              </button>
             </div>
-            <div className="flex items-center gap-1 text-xs tracking-widest uppercase text-gray-300">View <ChevronRight size={16}/></div>
-          </button>
+          ) : (
+            
+          /* CONDITION 2: BHARA HUA CART (Zomato Style Bar) */
+            <div className="px-4 pointer-events-auto">
+              <button 
+                onClick={() => setIsCartOpen(true)}
+                className="w-full bg-[#0f0f0f] border border-amber-500/30 text-amber-500 p-3.5 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.8)] flex items-center justify-between font-black active:scale-95 transition-transform"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-amber-500/10 p-2 rounded-xl border border-amber-500/20"><ShoppingCart size={20} /></div>
+                  <div className="text-left leading-tight">
+                    <div className="text-sm text-white">{cart.length} Items</div>
+                    <div className="text-[10px] text-amber-500/80 uppercase tracking-widest mt-0.5">₹{totalAmount.toLocaleString('en-IN')} Total</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs tracking-widest uppercase text-gray-300 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">View <ChevronRight size={16}/></div>
+              </button>
+            </div>
+          )}
         </div>
       )}
 

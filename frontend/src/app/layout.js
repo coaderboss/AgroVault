@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ReceiptText, NotebookTabs, Boxes, 
   Users, Bell, Search, Truck, PackagePlus, LogOut, 
   UserCircle, Store, Phone, X, Download, ShieldAlert, Settings, Info, AlertTriangle, CheckCircle2, ArrowLeft, ShieldCheck,
-  Megaphone, Send, Clock, Activity 
+  Megaphone, Send, Clock, Activity, Menu
 } from "lucide-react";
 
 export default function RootLayout({ children }) {
@@ -25,6 +25,7 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
   const [settingsData, setSettingsData] = useState({ role: "", securityQuestion: "", securityAnswer: "" });
   const [isSaving, setIsSaving] = useState(false);
   const [alertInfo, setAlertInfo] = useState({ show: false, type: "", message: "" });
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false); 
   
   // ─── PWA INSTALL STATES ───
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -227,7 +228,11 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
           <div className="flex-1 flex flex-col h-[100dvh] w-full bg-gray-50/50">
            {/* HEIGHT aur TEXT SIZE ko phone ke liye chhota kar diya (h-14 aur text-xl) */}
             <header className="h-14 md:h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex justify-between items-center px-3 md:px-8 z-20 sticky top-0 print:hidden">
-              <div className="md:hidden text-xl font-black text-gray-900">Galla<span className="text-amber-500">Vault</span></div>              <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 w-96"><Search size={18} className="text-gray-400 mr-3" /><input type="text" placeholder="Search..." className="bg-transparent outline-none w-full text-sm" /></div>
+              <div className="md:hidden flex items-center gap-2">
+                <button onClick={() => setIsDrawerOpen(true)} className="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors active:scale-95"><Menu size={24} /></button>
+               <div className="text-xl font-black text-gray-900">Galla<span className="text-amber-500">Vault</span></div>
+              </div>
+              <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 w-96"><Search size={18} className="text-gray-400 mr-3" /><input type="text" placeholder="Search..." className="bg-transparent outline-none w-full text-sm" /></div>
               <div className="flex items-center gap-3 md:gap-4">
                 {/* ─── PWA INSTALL BUTTON ─── */}
                 {isInstallable && (
@@ -259,7 +264,7 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
               </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-28 md:pb-8 relative">
+            <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-6 md:pb-8 relative">
               {/* ─── GLOBAL ALERT BANNER ─── */}
               <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-[150] transition-all duration-500 ease-in-out transform w-11/12 md:w-auto min-w-[300px] ${alertInfo.show ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`}>
                 <div className={`p-4 rounded-2xl shadow-xl flex items-start gap-3 border ${alertInfo.type === "error" ? "bg-rose-50 border-rose-200" : "bg-emerald-50 border-emerald-200"}`}>
@@ -274,24 +279,58 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
               <div className="max-w-7xl mx-auto h-full">{children}</div>
             </main>
 
-            {/* ─── MOBILE BOTTOM NAV (Safe & Intact) ─── */}
-            <nav className="md:hidden fixed bottom-0 w-full bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50 print:hidden">
-              <div className="flex items-center h-16 px-4 overflow-x-auto gap-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {/* ─── MOBILE SLIDING DRAWER (HAMBURGER MENU) ─── */}
+        {isDrawerOpen && (
+          <div className="md:hidden fixed inset-0 z-[400] flex">
+            {/* Dark Overlay (Bahar click karne par band hoga) */}
+            <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)}></div>
+            
+            {/* Sliding White Panel */}
+            <div className="relative w-[75%] max-w-sm bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-300 ease-out">
+              <div className="h-[70px] flex items-center justify-between px-6 border-b border-gray-100 bg-gray-50/80">
+                <div className="text-2xl font-black tracking-tight text-gray-900">
+                  Galla<span className="text-amber-500">Vault</span>
+                </div>
+                <button onClick={() => setIsDrawerOpen(false)} className="p-2 bg-white border border-gray-200 text-gray-500 rounded-full hover:bg-gray-100 transition-colors shadow-sm active:scale-95">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Menu Links */}
+              <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.path;
                   return (
-                    <Link key={item.name} href={item.path} className="flex flex-col items-center justify-center gap-1 shrink-0 min-w-[64px]">
-                      <Icon size={22} className={isActive ? item.color : 'text-gray-400'} strokeWidth={isActive ? 2.5 : 2} />
-                      <span className={`text-[10px] font-bold ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>{item.name}</span>
+                    <Link key={item.name} href={item.path} onClick={() => setIsDrawerOpen(false)}
+                      className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 ${
+                        isActive ? `${item.bg} ${item.color} font-black shadow-sm border border-${item.color.split('-')[1]}-200` : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-bold'
+                      }`}>
+                      <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="text-[15px] tracking-wide">{item.name}</span>
                     </Link>
                   );
                 })}
               </div>
-            </nav>
+              
+              {/* Profile Shortcut inside Menu */}
+              <div 
+                onClick={() => { setIsDrawerOpen(false); setIsProfileOpen(true); }}
+                className="p-4 m-4 border border-gray-200 rounded-2xl bg-white hover:bg-gray-50 flex items-center gap-3 cursor-pointer shadow-sm transition-colors active:scale-95"
+              >
+                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0 shadow-inner">
+                  {userData.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="truncate flex-1">
+                  <div className="text-sm font-black text-gray-900 truncate">{userData.name.split(" ")[0]}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 truncate">{userData.shopName || "View Profile"}</div>
+                </div>
+              </div>
+            </div>
           </div>
+        )}
         </div>
-
+        </div>
         {/* ─── LIVE SHOP FEED (NOTIFICATIONS PANEL) ─── */}
         {isNotifOpen && (
           <>
