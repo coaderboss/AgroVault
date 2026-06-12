@@ -103,6 +103,37 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, [pathname]);
 
+  // ─── SWIPE GESTURE ENGINE (Left-to-Right Swipe to Open Menu) ───
+  useEffect(() => {
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    const handleTouchStart = (e) => {
+      touchStartX = e.changedTouches[0].clientX; 
+    };
+    const handleTouchEnd = (e) => {
+      touchEndX = e.changedTouches[0].clientX; 
+      handleSwipe();
+    };
+    const handleSwipe = () => {
+      const swipeDistance = touchEndX - touchStartX;
+      
+      if (touchStartX < 80 && swipeDistance > 50) {
+        setIsDrawerOpen(true);
+      }
+      if (swipeDistance < -50) {
+        setIsDrawerOpen(false); 
+      }
+    };
+    document.addEventListener("touchstart", handleTouchStart);
+    document.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, []);
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
