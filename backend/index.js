@@ -397,6 +397,42 @@ app.put('/api/products/:id', auth, async (req, res) => {
   }
 });
 
+// 🗑️ DELETE PRODUCT (INVENTORY)
+app.delete('/api/products/:id', auth, async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    // 1. Pehle check karo item exist karta hai ya nahi (aur kya wo ishi owner ka hai)
+    const product = await prisma.product.findUnique({
+      where: { id: productId }
+    });
+
+    if (!product || product.userId !== req.shopOwnerId) {
+      return res.status(404).json({ success: false, message: "Item nahi mila ya aap iske owner nahi hain." });
+    }
+
+    // 2. Item ko Database se hamesha ke liye uda do
+    await prisma.product.delete({
+      where: { id: productId }
+    });
+
+    res.status(200).json({ success: true, message: "Item successfully deleted!" });
+
+  } catch (error) {
+    console.error("Delete API Error:", error);
+    
+    // 🚨 PRO TIP: Agar item kisi "Parchi" (Order) mein use ho chuka hoga, toh Prisma foreign key error dega (P2003)
+    if (error.code === 'P2003') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Yeh item pehle se bills/parchi mein use ho chuka hai. Isey delete karne se purane bills kharab ho jayenge. Kripya iska stock 0 kar dein." 
+      });
+    }
+
+    res.status(500).json({ success: false, message: "Server error during deletion." });
+  }
+});
+
 
 // ==========================================
 // 3. ORDERS (BILLING & UDHAAR) APIs
