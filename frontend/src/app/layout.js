@@ -597,20 +597,21 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
             });
           }
         `}} />
-
-        {/* ─── INVISIBLE SWIPE CATCHER (For Opening Menu) ─── */}
+      {/* ─── ENHANCED SWIPE CATCHER FOR CURVED SCREENS ─── */}
         {!isDrawerOpen && (
           <div 
-            className="md:hidden fixed top-0 left-0 w-5 h-full z-[300]" 
+            className="md:hidden fixed top-24 left-0 w-12 h-3/4 z-[300] bg-transparent" 
             onTouchStart={(e) => { window.touchStartX = e.touches[0].clientX; }}
             onTouchEnd={(e) => { 
-              if (e.changedTouches[0].clientX - window.touchStartX > 40) {
+              const swipeDiff = e.changedTouches[0].clientX - window.touchStartX;
+              // Condition: Ungli 70px ke andar se start ho (taaki back trigger na ho) aur swipe positive ho
+              if (swipeDiff > 40 && window.touchStartX < 70) {
                 setIsDrawerOpen(true);
               }
             }}
           />
         )}
-        
+
       </body>
     </html>
   );
