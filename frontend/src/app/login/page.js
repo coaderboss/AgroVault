@@ -130,7 +130,7 @@ export default function Login() {
               <ShieldCheck size={32} strokeWidth={2.5} />
             </div>
             <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">
-              {isLoginMode ? "AgroVault" : "Create Account"}
+              {isLoginMode ? "GallaVault" : "Create Account"}
             </h1>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
               {isLoginMode ? "Secure Business Gateway" : "Register your business"}
@@ -193,7 +193,7 @@ export default function Login() {
                   <div>
                     <div className="relative">
                       <ShieldCheck size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400" />
-                      <input type="text" name="shopKey" required={formData.role === "EMPLOYEE"} placeholder="Enter Shop Key (e.g., AGRO-XXX)" value={formData.shopKey} onChange={handleChange}
+                      <input type="text" name="shopKey" required={formData.role === "EMPLOYEE"} placeholder="Enter Shop Key (e.g., Galla-XXX)" value={formData.shopKey} onChange={handleChange}
                         className="w-full pl-12 pr-4 py-3 md:py-3.5 bg-blue-50 border border-blue-200 rounded-xl md:rounded-2xl text-blue-900 font-black focus:outline-none focus:border-blue-500 transition-all text-sm uppercase placeholder-blue-300"
                       />
                     </div>

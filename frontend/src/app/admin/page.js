@@ -144,7 +144,7 @@ export default function SuperAdminOverseer() {
           </nav>
         </div>
         <div className="p-4 border-t border-white/5 text-center md:text-left">
-          <div className="hidden md:block text-[9px] text-gray-600 font-mono">AgroVault SysAdmin v2.0<br/>Live Connection</div>
+          <div className="hidden md:block text-[9px] text-gray-600 font-mono">GallaVault SysAdmin v2.0<br/>Live Connection</div>
           <ShieldAlert size={16} className="md:hidden text-gray-600 mx-auto" />
         </div>
       </aside>

@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_NAME = 'agrovault-pwa-v1'; // AgroVault ka naya cache version
+const CACHE_NAME = "gallavault-cache-v1";
 
 const urlsToCache = [
   '/',
@@ -24,7 +24,7 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('AgroVault: Deleting old cache:', cacheName);
+            console.log('GallaVault: Deleting old cache:', cacheName);
             return caches.delete(cacheName); // Purana kachra saaf
           }
         })

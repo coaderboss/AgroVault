@@ -141,7 +141,7 @@ export default function PointOfSale() {
       const customerInfo = customers.find(c => c.id === selectedCustomer);
       
       setGeneratedSlip({
-        shopName: userInfo.shopName || "AgroVault Workspace",
+        shopName: userInfo.shopName || "GallaVault Workspace",
         customerName: customerInfo?.name || "Walk-in Customer",
         customerMobile: customerInfo?.mobile || "",
         items: cart,
