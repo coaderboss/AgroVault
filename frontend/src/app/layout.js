@@ -188,7 +188,7 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
           <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 shadow-sm z-30 print:hidden">
             <div className="h-20 flex items-center px-8 border-b border-gray-100">
               <div className="text-3xl font-black tracking-tight text-gray-900">
-                Agro<span className="text-emerald-600">Vault</span>
+                Galla<span className="text-amber-500">Vault</span>
               </div>
             </div>
             

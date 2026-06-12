@@ -1,11 +1,11 @@
 {
-  "name": "AgroVault Workspace",
-  "short_name": "AgroVault",
-  "description": "Smart Inventory & Billing for Business",
+  "name": "GallaVault - Master Inventory",
+  "short_name": "GallaVault",
+  "description": "Smart Inventory & Ledger Management for Business",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#10b981",
+  "background_color": "#0f0f0f",
+  "theme_color": "#f59e0b",
   "icons": [
     {
       "src": "/icon-192x192.png",
