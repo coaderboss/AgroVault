@@ -103,36 +103,6 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, [pathname]);
 
-  // ─── SWIPE GESTURE ENGINE (Left-to-Right Swipe to Open Menu) ───
-  useEffect(() => {
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    const handleTouchStart = (e) => {
-      touchStartX = e.changedTouches[0].clientX; 
-    };
-    const handleTouchEnd = (e) => {
-      touchEndX = e.changedTouches[0].clientX; 
-      handleSwipe();
-    };
-    const handleSwipe = () => {
-      const swipeDistance = touchEndX - touchStartX;
-      
-      if (touchStartX < 80 && swipeDistance > 50) {
-        setIsDrawerOpen(true);
-      }
-      if (swipeDistance < -50) {
-        setIsDrawerOpen(false); 
-      }
-    };
-    document.addEventListener("touchstart", handleTouchStart);
-    document.addEventListener("touchend", handleTouchEnd);
-
-    return () => {
-      document.removeEventListener("touchstart", handleTouchStart);
-      document.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, []);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -433,82 +403,62 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
 
         {/* ─── PREMIUM MINIMALIST PROFILE MODAL ─── */}
         {isProfileOpen && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-            {/* HEIGHT FIX: max-h-[85vh] lagaya hai */}
-            <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+          <div className="fixed inset-0 z-[500] flex items-end sm:items-center justify-center bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white w-full sm:max-w-sm rounded-t-[2rem] sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-300 flex flex-col max-h-[85vh]">
               
-              {/* ─── MAIN PROFILE VIEW ─── */}
+              {/* Header */}
               {profileTab === "info" && (
                 <div className="flex flex-col h-full overflow-hidden">
-                  <div className="p-4 md:p-5 flex justify-between items-center border-b border-gray-50 shrink-0">
-                    <h3 className="font-black text-gray-800 text-sm tracking-wide">My Account</h3>
-                    <button onClick={() => setIsProfileOpen(false)} className="text-gray-400 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors"><X size={18}/></button>
+                  <div className="px-6 py-5 flex justify-between items-center border-b border-gray-50 shrink-0">
+                    <h3 className="font-black text-gray-900 text-lg">My Account</h3>
+                    <button onClick={() => setIsProfileOpen(false)} className="text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2.5 rounded-full transition-colors active:scale-95"><X size={18}/></button>
                   </div>
                   
-                  {/* PADDING FIX: p-5 kiya aur pb-6 lagaya */}
-                  <div className="p-5 flex-1 overflow-y-auto pb-6">
-                  <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-3 shadow-sm border border-emerald-100">
+                  <div className="p-6 flex-1 overflow-y-auto space-y-6">
+                    {/* Avatar & Name Block */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-2xl font-black mb-3 shadow-sm border border-emerald-100">
                         {userData.name.charAt(0).toUpperCase()}
                       </div>
-                      <h2 className="text-xl font-black text-gray-900">{userData.name}</h2>
-                      <span className={`text-[10px] font-bold uppercase tracking-widest mt-1 px-2.5 py-0.5 rounded-full border ${userData.role ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-rose-100 text-rose-600 border-rose-200'}`}>
+                      <h2 className="text-xl font-black text-gray-900 leading-tight">{userData.name}</h2>
+                      <span className="text-[10px] font-black uppercase tracking-widest mt-1 px-3 py-1 rounded-md bg-gray-100 text-gray-500">
                         {userData.role || "ROLE NOT SET"}
                       </span>
                     </div>
 
-                    <div className="space-y-4 mb-8">
-                      <div className="flex items-center gap-4 p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400"><Phone size={18}/></div>
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase">Mobile Number</p>
-                          <p className="text-sm font-black text-gray-800">{userData.phone ? `+91 XXXXXX${userData.phone.slice(-4)}` : "Not Provided"}</p>
-                        </div>
+                    {/* Info Cards */}
+                    <div className="space-y-3">
+                      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mobile Number</p>
+                        <p className="font-black text-gray-800 text-sm">{userData.phone ? `+91 XXXXXX${userData.phone.slice(-4)}` : "Not Provided"}</p>
                       </div>
-                      <div className="flex items-center gap-4 p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400"><Store size={18}/></div>
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase">Business</p>
-                          <p className="text-sm font-black text-gray-800">{userData.shopName || "Not Set"}</p>
-                        </div>
+                      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Business</p>
+                        <p className="font-black text-gray-800 text-sm">{userData.shopName || "Not Set"}</p>
                       </div>
                       
-                      {/* ─── SHOW SHOP KEY IF OWNER ─── */}
                       {userData.role === "OWNER" && userData.shopKey && (
-                        <div className="flex items-center justify-between p-3.5 bg-emerald-50 rounded-2xl border border-emerald-100 shadow-sm mt-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-emerald-500"><ShieldCheck size={18}/></div>
-                            <div>
-                              <p className="text-[10px] font-bold text-emerald-600 uppercase">Shop Key (For Staff)</p>
-                              <p className="text-sm font-black text-emerald-900">{userData.shopKey}</p>
-                            </div>
+                        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex justify-between items-center">
+                          <div>
+                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Shop Key (For Staff)</p>
+                            <p className="font-black text-emerald-900 text-sm">{userData.shopKey}</p>
                           </div>
+                          <ShieldCheck size={20} className="text-emerald-500"/>
                         </div>
                       )}
                     </div>
 
-                    <div className="space-y-3">
-                      <button 
-                        onClick={() => {
-                          setProfileTab("settings");
-                          setActiveSettingSection("general");
-                          setSettingsData({ 
-                            role: userData.role || "", shopName: userData.shopName || "", 
-                            address: userData.address || "", email: userData.email || "", 
-                            shopKey: "", securityQuestion: "", securityAnswer: "" 
-                          });
-                        }} 
-                        className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm"
-                      >
+                    {/* Action Buttons */}
+                    <div className="space-y-3 pt-2">
+                      <button onClick={() => setProfileTab("settings")} className="w-full bg-white border border-gray-200 hover:border-gray-300 text-gray-900 font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm text-sm active:scale-95">
                         <Settings size={18}/> Account Settings
                       </button>
-                      <button 
-                        onClick={handleLogout} 
-                        className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-colors border border-rose-100"
-                      >
+                      <button onClick={handleLogout} className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-colors text-sm active:scale-95">
                         <LogOut size={18}/> Secure Logout
                       </button>
                     </div>
                   </div>
+                </div>
               )}
 
               {/* ─── SETTINGS VIEW (Nested) ─── */}
@@ -647,6 +597,20 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
             });
           }
         `}} />
+
+        {/* ─── INVISIBLE SWIPE CATCHER (For Opening Menu) ─── */}
+        {!isDrawerOpen && (
+          <div 
+            className="md:hidden fixed top-0 left-0 w-5 h-full z-[300]" 
+            onTouchStart={(e) => { window.touchStartX = e.touches[0].clientX; }}
+            onTouchEnd={(e) => { 
+              if (e.changedTouches[0].clientX - window.touchStartX > 40) {
+                setIsDrawerOpen(true);
+              }
+            }}
+          />
+        )}
+        
       </body>
     </html>
   );
