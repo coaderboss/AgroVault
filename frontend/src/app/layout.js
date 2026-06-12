@@ -227,7 +227,7 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
           <div className="flex-1 flex flex-col h-[100dvh] w-full bg-gray-50/50">
            {/* HEIGHT aur TEXT SIZE ko phone ke liye chhota kar diya (h-14 aur text-xl) */}
             <header className="h-14 md:h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex justify-between items-center px-3 md:px-8 z-20 sticky top-0 print:hidden">
-              <div className="md:hidden text-xl font-black text-gray-900">Agro<span className="text-emerald-600">Vault</span></div>              <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 w-96"><Search size={18} className="text-gray-400 mr-3" /><input type="text" placeholder="Search..." className="bg-transparent outline-none w-full text-sm" /></div>
+              <div className="md:hidden text-xl font-black text-gray-900">Galla<span className="text-amber-500">Vault</span></div>              <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 w-96"><Search size={18} className="text-gray-400 mr-3" /><input type="text" placeholder="Search..." className="bg-transparent outline-none w-full text-sm" /></div>
               <div className="flex items-center gap-3 md:gap-4">
                 {/* ─── PWA INSTALL BUTTON ─── */}
                 {isInstallable && (
@@ -506,7 +506,7 @@ const [userData, setUserData] = useState({ name: "User", shopName: "", phone: ""
                           {settingsData.role === "EMPLOYEE" && !(userData.role === "OWNER" || userData.role === "EMPLOYEE") && (
                             <div className="animate-in fade-in zoom-in-95 duration-200">
                               <label className="block text-[10px] font-bold text-blue-500 uppercase mb-1.5">Owner's Shop Key</label>
-                              <input type="text" placeholder="e.g. AGRO-XYZ" value={settingsData.shopKey} onChange={(e) => setSettingsData({...settingsData, shopKey: e.target.value})} className="w-full p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm font-bold text-blue-900 outline-none uppercase placeholder-blue-300" />
+                              <input type="text" placeholder="e.g. Galla-XYZ" value={settingsData.shopKey} onChange={(e) => setSettingsData({...settingsData, shopKey: e.target.value})} className="w-full p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm font-bold text-blue-900 outline-none uppercase placeholder-blue-300" />
                             </div>
                           )}
 

@@ -18,7 +18,7 @@ export default function Dashboard() {
     pendingDues: 0
   });
   const [loading, setLoading] = useState(true);
-  const [userData, setUserData] = useState({ name: "User", shopName: "AgroVault Workspace", role: "", shopKey: "" });
+  const [userData, setUserData] = useState({ name: "User", shopName: "GallaVault Workspace", role: "", shopKey: "" });
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user_info");
