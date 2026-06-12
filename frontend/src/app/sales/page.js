@@ -27,6 +27,17 @@ export default function PointOfSale() {
   const [activeItem, setActiveItem] = useState(null);
   const [draftConfig, setDraftConfig] = useState({ qty: 1, unit: "KG", customMultiplier: 50, customLabel: "", price: 0 });
 
+  // ─── NAYA: BULK PACKET ENGINE STATE & LOGIC ───
+  const [bulkCalc, setBulkCalc] = useState({ active: false, outerCount: "", innerCount: "" });
+
+  useEffect(() => {
+    if (bulkCalc.active && bulkCalc.outerCount && bulkCalc.innerCount) {
+        const totalPacks = Number(bulkCalc.outerCount) * Number(bulkCalc.innerCount);
+        // Box tick hote hi quantity change hogi aur Unit apne aap "Packet" par set ho jayega
+        setDraftConfig(prev => ({ ...prev, qty: totalPacks, unit: "Packet" })); 
+    }
+  }, [bulkCalc.outerCount, bulkCalc.innerCount, bulkCalc.active]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -70,16 +81,19 @@ export default function PointOfSale() {
     if (unit === "Ton") return 1000;
     if (unit === "Custom_Bag") return Number(customMult) || 1;
     if (unit === "Dozen") return 12;
-    return 1; // Default for KG, Litre, Pcs, etc.
+    // 👈 BUG FIX: Packet ka multiplier (1 packet mein kitna KG hai)
+    if (unit === "Packet") return Number(activeItem?.qtyPerPackage) || 1; 
+    return 1; 
   };
 
   const openSmartAdder = (product) => {
     if (product.stockQty <= 0) return alert("Stock empty hai!");
     setActiveItem(product);
+    setBulkCalc({ active: false, outerCount: "", innerCount: "" }); // 👈 Har naye item par calculator reset
     setDraftConfig({ 
       qty: 1, 
       unit: product.unit || "Pcs", 
-      customMultiplier: 50, // Default bori weight
+      customMultiplier: 50, 
       customLabel: "", 
       price: product.sellPrice 
     });
@@ -359,14 +373,14 @@ export default function PointOfSale() {
                     value={draftConfig.unit} onChange={(e) => setDraftConfig({...draftConfig, unit: e.target.value})}
                     className="w-1/2 p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm text-gray-700 outline-none focus:border-emerald-500 transition-colors"
                   >
-                    {["KG", "Gram"].includes(activeItem.unit) && (
-                      <><option value="KG">Kilo (KG)</option><option value="Gram">Gram (g)</option><option value="Custom_Bag">Bag / Bori</option><option value="Quintal">Quintal</option></>
+                    {["KG", "Gram"].includes(activeItem?.unit) && (
+                      <><option value="KG">Kilo (KG)</option><option value="Gram">Gram (g)</option><option value="Custom_Bag">Bag / Bori</option><option value="Quintal">Quintal</option><option value="Packet">Packet (Pkt)</option></>
                     )}
-                    {["Litre", "ML"].includes(activeItem.unit) && (
-                      <><option value="Litre">Litre (L)</option><option value="ML">ML</option></>
+                    {["Litre", "ML"].includes(activeItem?.unit) && (
+                      <><option value="Litre">Litre (L)</option><option value="ML">ML</option><option value="Packet">Packet (Pkt)</option></>
                     )}
-                    {!["KG", "Gram", "Litre", "ML"].includes(activeItem.unit) && (
-                      <><option value={activeItem.unit}>{activeItem.unit}</option><option value="Dozen">Dozen</option><option value="Box">Box</option></>
+                    {!["KG", "Gram", "Litre", "ML"].includes(activeItem?.unit) && (
+                      <><option value={activeItem?.unit}>{activeItem?.unit}</option><option value="Dozen">Dozen</option><option value="Box">Box</option><option value="Packet">Packet (Pkt)</option></>
                     )}
                   </select>
                 </div>
@@ -386,6 +400,22 @@ export default function PointOfSale() {
                   </div>
                 )}
               </div>
+
+              {/* ─── DYNAMIC BULK PACKET CALCULATOR (POS Emerald Theme) ─── */}
+                {(draftConfig.unit === "Packet" || activeItem?.unit === "Packet" || activeItem?.packageUnit === "Packet") && (
+                  <div className="mt-3 bg-emerald-50 p-3 rounded-xl border border-emerald-200 animate-in fade-in zoom-in-95">
+                    <label className="flex items-center gap-2 text-[10px] font-black text-emerald-800 uppercase cursor-pointer mb-2">
+                      <input type="checkbox" checked={bulkCalc.active} onChange={(e) => setBulkCalc({...bulkCalc, active: e.target.checked})} className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 accent-emerald-600 border-emerald-300"/>
+                      Packets Bori / Box ke andar hain? (Auto-Calculate)
+                    </label>
+                    {bulkCalc.active && (
+                      <div className="grid grid-cols-2 gap-3 mt-2 border-t border-emerald-200/60 pt-3">
+                        <div><label className="block text-[9px] font-bold text-emerald-700/70 uppercase mb-1">Total Bori / Box</label><input type="number" value={bulkCalc.outerCount} onChange={e => setBulkCalc({...bulkCalc, outerCount: e.target.value})} className="w-full p-2 bg-white border border-emerald-200 rounded-lg text-sm text-gray-900 outline-none focus:border-emerald-500" placeholder="e.g. 10"/></div>
+                        <div><label className="block text-[9px] font-bold text-emerald-700/70 uppercase mb-1">Packets in 1 Bori</label><input type="number" value={bulkCalc.innerCount} onChange={e => setBulkCalc({...bulkCalc, innerCount: e.target.value})} className="w-full p-2 bg-white border border-emerald-200 rounded-lg text-sm text-gray-900 outline-none focus:border-emerald-500" placeholder="e.g. 20"/></div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
               {/* Dynamic Price Override */}
               <div>
