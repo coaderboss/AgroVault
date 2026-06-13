@@ -10,7 +10,7 @@
 
 <br/>
 
-> **🚀 Live Demo:** [Experience GallaVault Here](https://agrovault.vercel.app/) *(Deployed on Vercel)*
+> **🚀 Live Demo:** [Experience GallaVault Here](https://gallavaultt.vercel.app/) *(Deployed on Vercel)*
 
 **GallaVault** is a premium, full-stack ERP and Point of Sale (POS) solution designed specifically for retail, agribusinesses, and wholesalers. It modernizes traditional ledger keeping (*Bahi Khata*) by combining hyper-fast billing, dynamic inventory management, and secure multi-tier user access into a sleek, mobile-first Progressive Web App (PWA).
 
@@ -61,12 +61,11 @@
 
 ## 📸 Application Showcase
 
-*(Add high-quality screenshots of your application here to visualize the UI/UX)*
 
-* **Dashboard Analytics:** `[Insert Screenshot]`
-* **Smart POS Terminal:** `[Insert Screenshot]`
-* **Ledger Management & WhatsApp Sync:** `[Insert Screenshot]`
-* **Excel-Style Bulk Add Grid:** `[Insert Screenshot]`
+* **Dashboard Analytics:**
+* **Smart POS Terminal:** 
+* **Ledger Management & WhatsApp Sync:** 
+* **Excel-Style Bulk Add Grid:**
 
 ---
 <div align="center">
