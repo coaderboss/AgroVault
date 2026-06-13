@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { 
   Search, ShoppingCart, User, Trash2, ReceiptText, 
-  X, Plus, Minus, Tag, PackageOpen, ChevronRight, Calculator
+  X, Plus, Minus, Tag, PackageOpen, ChevronRight, Calculator, MessageCircle
 } from "lucide-react";
 import Cookies from "js-cookie";
 
@@ -186,6 +186,42 @@ export default function PointOfSale() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // ─── SHARE BILL ON WHATSAPP (DYNAMIC CONTACT) ───
+  const shareOnWhatsApp = () => {
+    if(!generatedSlip) return;
+
+    let text = `🧾 *CASH / CREDIT MEMO*\n`;
+    text += `🏪 *${generatedSlip.shopName}*\n`;
+    text += `------------------------\n`;
+    text += `👤 Billed To: ${generatedSlip.customerName}\n`;
+    text += `📅 Date: ${generatedSlip.date.split(',')[0]}\n`;
+    text += `🏷️ Bill No: #${generatedSlip.billId}\n`;
+    text += `------------------------\n`;
+    text += `*🛒 Items Purchased:*\n`;
+
+    generatedSlip.items.forEach((item, index) => {
+       const name = item.customLabel || item.name;
+       const total = item.enteredQty * item.priceAtSale;
+       text += `${index + 1}. ${name} - ${item.enteredQty} ${item.enteredUnit} @ ₹${item.priceAtSale} = ₹${total}\n`;
+    });
+
+    text += `------------------------\n`;
+    text += `💰 *Grand Total: ₹${generatedSlip.total.toLocaleString('en-IN')}*\n`;
+    text += `✅ Paid Amount: ₹${generatedSlip.paid.toLocaleString('en-IN')}\n`;
+    
+    if (generatedSlip.due > 0) {
+      text += `🔴 *Balance Due: ₹${generatedSlip.due.toLocaleString('en-IN')}*\n`;
+    }
+    
+    text += `------------------------\n`;
+    text += `*Billed By:* ${generatedSlip.billedBy}\n`;
+    text += `Thank you for visiting! 🙏`;
+
+    // Bina number ka link: WhatsApp open hokar puchega kisko bhejna hai!
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -579,9 +615,27 @@ export default function PointOfSale() {
             </div>
             
             {/* ─── ACTION BUTTONS (Hidden during print) ─── */}
-            <div className="mt-6 flex gap-3 print-hide-element">
-              <button onClick={() => window.print()} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-black text-xs uppercase tracking-widest rounded-xl transition-colors border border-gray-300">Print</button>
-              <button onClick={() => setGeneratedSlip(null)} className="flex-1 py-3 bg-gray-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest rounded-xl transition-colors shadow-md">Done</button>
+            <div className="mt-6 flex flex-col gap-3 print-hide-element">
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => window.print()} 
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-black text-xs uppercase tracking-widest rounded-xl transition-colors border border-gray-300 flex justify-center items-center gap-1.5"
+                >
+                  <ReceiptText size={16}/> Print
+                </button>
+                <button 
+                  onClick={shareOnWhatsApp} 
+                  className="flex-1 py-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-black text-xs uppercase tracking-widest rounded-xl transition-colors border border-emerald-200 flex justify-center items-center gap-1.5 shadow-sm active:scale-95"
+                >
+                  <MessageCircle size={16}/> WhatsApp
+                </button>
+              </div>
+              <button 
+                onClick={() => setGeneratedSlip(null)} 
+                className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest rounded-xl transition-colors shadow-md active:scale-95"
+              >
+                Done / Close
+              </button>
             </div>
           </div>
           
