@@ -7,7 +7,12 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const SECRET_KEY = "agrovault_super_secret_key"; // Token lock karne ki chaabi
+const SECRET_KEY = process.env.JWT_SECRET; 
+
+if (!SECRET_KEY) {
+  console.error("🚨 CRITICAL ERROR: JWT_SECRET environment variable set nahi hai!");
+  process.exit(1); 
+}
 
 // ─── PRISMA 7 DRIVER SETUP ───
 const { Pool } = pg;
@@ -66,8 +71,10 @@ app.post('/api/register', async (req, res) => {
     if (!/^\d{10}$/.test(phone)) {
       return res.status(400).json({ success: false, message: "Mobile number exactly 10 digits ka hona chahiye! Na kam, na zyada." });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: "Password kam se kam 6 characters ka hona chahiye!" });
+    
+    // 🚨 LPDos FIX: Password 6 se 25 characters ke beech hi hona chahiye
+    if (password.length < 6 || password.length > 25) {
+      return res.status(400).json({ success: false, message: "Password 6 se 25 characters ke beech hona chahiye!" });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { phone } });
@@ -917,8 +924,9 @@ app.post('/api/forgot-password', async (req, res) => {
       return res.status(400).json({ success: false, message: "Security answer galat hai! Koshish wapas karein." });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: "Password kam se kam 6 characters ka hona chahiye." });
+    // 🚨 LPDos FIX: Reset karte waqt bhi length strictly check hogi
+    if (newPassword.length < 6 || newPassword.length > 25) {
+      return res.status(400).json({ success: false, message: "Naya password 6 se 25 characters ke beech hona chahiye." });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
