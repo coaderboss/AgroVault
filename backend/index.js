@@ -213,6 +213,58 @@ app.post('/api/customers', auth, async (req, res) => {
   }
 });
 
+// ─── BULK ADD CUSTOMERS (EXCEL-STYLE) ───
+app.post('/api/customers/bulk', auth, async (req, res) => {
+  try {
+    const { customers } = req.body;
+
+    if (!customers || !Array.isArray(customers) || customers.length === 0) {
+      return res.status(400).json({ success: false, message: "Kisaan ka data missing hai!" });
+    }
+
+    // Transaction ka use karenge taaki Kisaan aur uska Udhaar dono saath mein save ho
+    const result = await prisma.$transaction(async (tx) => {
+      let addedCount = 0;
+      
+      for (const cust of customers) {
+        // Agar galti se koi khali row aa jaye toh usko skip kar do
+        if (!cust.name || !cust.mobile || !cust.village) continue;
+
+        const newCustomer = await tx.customer.create({
+          data: {
+            name: cust.name,
+            mobile: cust.mobile,
+            village: cust.village,
+            userId: req.shopOwnerId
+          }
+        });
+
+        // Agar purana udhaar hai toh System Parchi kaat do
+        if (cust.openingBalance && Number(cust.openingBalance) > 0) {
+          await tx.order.create({
+            data: {
+              userId: req.shopOwnerId,
+              createdById: req.userId,
+              createdByName: "System",
+              customerId: newCustomer.id,
+              totalAmount: Number(cust.openingBalance),
+              paidAmount: 0,
+              status: "UDHAAR",
+            }
+          });
+        }
+        addedCount++;
+      }
+      return addedCount;
+    });
+
+    res.status(201).json({ success: true, message: `${result} Kisaan safaltapoorvak add ho gaye!`, count: result });
+  } catch (error) {
+    console.error("Bulk Customer Error:", error);
+    res.status(500).json({ success: false, message: "Bulk upload mein error aaya." });
+  }
+});
+
 app.get('/api/customers', auth, async (req, res) => {
   try {
     const customers = await prisma.customer.findMany({ 
@@ -695,6 +747,59 @@ app.post('/api/suppliers', auth, async (req, res) => {
   } catch (error) {
     console.error("Supplier Creation Error:", error);
     res.status(500).json({ success: false, message: "Supplier save error" });
+  }
+});
+
+// ─── BULK ADD SUPPLIERS (EXCEL-STYLE) ───
+app.post('/api/suppliers/bulk', auth, async (req, res) => {
+  try {
+    const { suppliers } = req.body;
+
+    if (!suppliers || !Array.isArray(suppliers) || suppliers.length === 0) {
+      return res.status(400).json({ success: false, message: "Supplier ka data missing hai!" });
+    }
+
+    // Transaction taaki Supplier aur Purana Udhaar (System Parchi) dono ek sath bane
+    const result = await prisma.$transaction(async (tx) => {
+      let addedCount = 0;
+      
+      for (const sup of suppliers) {
+        // Agar naam ya mobile missing hai toh row skip karo
+        if (!sup.name || !sup.mobile) continue;
+
+        const newSupplier = await tx.supplier.create({
+          data: {
+            name: sup.name,
+            company: sup.company || null,
+            mobile: sup.mobile,
+            address: sup.address || null,
+            userId: req.shopOwnerId
+          }
+        });
+
+        // Agar purana baaki hai toh 'System' ke naam se purchase entry bana do
+        if (sup.openingBalance && Number(sup.openingBalance) > 0) {
+          await tx.purchase.create({
+            data: {
+              userId: req.shopOwnerId,
+              createdById: req.userId,
+              createdByName: "System",
+              supplierId: newSupplier.id,
+              totalAmount: Number(sup.openingBalance),
+              paidAmount: 0,
+              status: "UDHAAR",
+            }
+          });
+        }
+        addedCount++;
+      }
+      return addedCount;
+    });
+
+    res.status(201).json({ success: true, message: `${result} Suppliers safaltapoorvak add ho gaye!`, count: result });
+  } catch (error) {
+    console.error("Bulk Supplier Error:", error);
+    res.status(500).json({ success: false, message: "Bulk upload mein error aaya." });
   }
 });
 
