@@ -1,10 +1,13 @@
 {
-  "name": "GallaVault - Master Inventory",
+  "id": "gallavault-app",
+  "name": "GallaVault",
   "short_name": "GallaVault",
-  "description": "Smart Inventory & Ledger Management for business",
+  "description": "Master Inventory and Ledger Management",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff", 
+  "orientation": "portrait",
+  "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "icons": [
     {
