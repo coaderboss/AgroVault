@@ -4,7 +4,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { 
   Wallet, Search, Phone, MapPin, Receipt, CheckCircle, 
-  Clock, X, Check, Trash2, User, Package, AlertTriangle, CheckCircle2 
+  Clock, X, Check, Trash2, User, Package, AlertTriangle, CheckCircle2, MessageCircle 
 } from "lucide-react";
 
 export default function Ledger() {
@@ -108,6 +108,30 @@ export default function Ledger() {
       showLocalAlert("error", "Payment update karne mein error aagaya!");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // ─── SMART WHATSAPP REMINDER LOGIC ───
+  const sendWhatsAppReminder = (order) => {
+    const dueAmount = order.totalAmount - order.paidAmount;
+    
+    // Ekdum professional aur desi touch wala message
+    const text = `Namaskar ${order.customer.name} ji, 🙏\n\n` +
+                 `Aapka humari dukaan par ek hisaab baaki hai.\n` +
+                 `📄 Bill No: #${order.id.slice(-6).toUpperCase()}\n` +
+                 `💰 Total Bill: ₹${order.totalAmount}\n` +
+                 `✅ Jama Kiya: ₹${order.paidAmount}\n` +
+                 `🔴 *Baaki Udhaar (Due): ₹${dueAmount}*\n\n` +
+                 `Kripya apna udhaar samay par clear karein. Dhanyawad! 🌾`;
+    
+    const phone = order.customer.mobile;
+    
+    if(phone && phone.length === 10) {
+      // Direct WhatsApp open karne ka link (Phone par app mein khulega, PC par WhatsApp Web)
+      const url = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    } else {
+      showLocalAlert("error", "Kisaan ka mobile number theek nahi hai, WhatsApp nahi bhej sakte.");
     }
   };
 
@@ -247,19 +271,29 @@ export default function Ledger() {
                       <div className="text-base md:text-xl font-black text-rose-600 mt-0.5">Due: ₹{dueAmount.toLocaleString('en-IN')}</div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 md:gap-2">
                       <button 
                         onClick={() => triggerCancel(order.id)}
-                        className="p-2 md:p-2.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg transition-all shadow-sm"
+                        className="p-2 md:p-2.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg transition-all shadow-sm active:scale-95"
                         title="Cancel Bill"
                       >
                         <Trash2 size={16} />
                       </button>
+                      
+                      {/* NAYA WHATSAPP BUTTON */}
+                      <button 
+                        onClick={() => sendWhatsAppReminder(order)}
+                        className="p-2 md:p-2.5 bg-white border border-emerald-200 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all shadow-sm active:scale-95"
+                        title="Send WhatsApp Reminder"
+                      >
+                        <MessageCircle size={16} />
+                      </button>
+
                       <button 
                         onClick={() => setPaymentModal({ isOpen: true, order: order, amountInput: dueAmount.toString() })}
-                        className="bg-rose-600 hover:bg-rose-700 text-white font-black px-4 py-2 md:py-2.5 rounded-lg text-xs md:text-sm shadow-sm shadow-rose-600/20 transition-all active:scale-95 whitespace-nowrap"
+                        className="bg-rose-600 hover:bg-rose-700 text-white font-black px-3 py-2 md:px-4 md:py-2.5 rounded-lg text-[10px] md:text-sm shadow-sm shadow-rose-600/20 transition-all active:scale-95 whitespace-nowrap uppercase tracking-widest"
                       >
-                        Collect Due
+                        Collect
                       </button>
                     </div>
                   </div>
