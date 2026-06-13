@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import { 
   TrendingUp, Wallet, Boxes, UserPlus, Store, 
   ReceiptText, ShieldCheck, AlertCircle, ArrowUpRight, 
-  Clock, Activity, Zap, BarChart3, ArrowRight
+  Clock, Activity, Zap, BarChart3, ArrowRight, DownloadCloud 
 } from "lucide-react";
 import Link from "next/link";
 
@@ -64,6 +64,58 @@ export default function Dashboard() {
     };
     fetchData();
   }, []);
+
+  // ─── 1-CLICK EXCEL BACKUP LOGIC ───
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDownloadBackup = async () => {
+    setIsExporting(true);
+    try {
+      const token = Cookies.get("auth_token"); 
+      const config = { headers: { Authorization: `Bearer ${token}` } }; 
+
+      // Data fetch karna
+      const custRes = await axios.get("https://agrovault.onrender.com/api/customers", config);
+      const customers = custRes.data.data;
+
+      if (!customers || customers.length === 0) {
+        alert("Abhi export karne ke liye koi data nahi hai!");
+        setIsExporting(false);
+        return;
+      }
+
+      // Excel (CSV) ka Header banana
+      let csvContent = "Kisaan Name,Mobile No,Village/City,Total Billed (Rs),Total Paid (Rs),Pending Udhaar (Rs)\n";
+      
+      // Har kisaan ka data nayi line mein add karna
+      customers.forEach(c => {
+        const totalPurchased = c.totalPurchased || 0;
+        const totalPaid = c.totalPaid || 0;
+        const totalDue = c.totalDue || 0;
+        
+        // Agar naam ya gaon mein comma (,) hua toh Excel kharab na ho, isliye quotes lagaye hain
+        csvContent += `"${c.name}","${c.mobile}","${c.village}",${totalPurchased},${totalPaid},${totalDue}\n`;
+      });
+
+      // Browser ke andar file download karwana
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const date = new Date().toLocaleDateString('en-IN').replace(/\//g, '-');
+      
+      link.setAttribute("href", url);
+      link.setAttribute("download", `GallaVault_Udhaar_Backup_${date}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (error) {
+      console.error("Backup failed:", error);
+      alert("Backup download karne mein error aaya!");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -218,7 +270,7 @@ export default function Dashboard() {
         <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-1 flex items-center gap-2">
           <Zap size={14}/> Operations
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
           
           <Link href="/sales" className="relative overflow-hidden bg-white border border-gray-100 rounded-[1.5rem] p-5 flex items-center justify-between group shadow-sm hover:shadow-[0_8px_30px_rgb(16,185,129,0.12)] hover:border-emerald-200 transition-all duration-300">
             <div className="flex items-center gap-4">
@@ -253,9 +305,26 @@ export default function Dashboard() {
             <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-purple-50 transition-colors"><ArrowRight size={14} className="text-gray-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all"/></div>
           </Link>
 
+          {/* NAYA 1-CLICK BACKUP BUTTON (SOFT THEME) */}
+          <button 
+            onClick={handleDownloadBackup}
+            disabled={isExporting}
+            className="w-full text-left relative overflow-hidden bg-white border border-gray-100 rounded-[1.5rem] p-5 flex items-center justify-between group shadow-sm hover:shadow-[0_8px_30px_rgb(59,130,246,0.12)] hover:border-blue-200 transition-all duration-300 disabled:opacity-70"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-50 text-gray-600 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:bg-blue-500 group-hover:text-white group-hover:-translate-y-1 transition-all duration-300 shadow-sm">
+                <DownloadCloud size={20} className={isExporting ? "animate-bounce" : ""} />
+              </div>
+              <div>
+                <h3 className="font-black text-gray-900 text-sm">Export Khata</h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-0.5 tracking-wide">Excel Backup</p>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors"><ArrowRight size={14} className="text-gray-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all"/></div>
+          </button>
+
         </div>
       </div>
-
     </div>
   );
 }
