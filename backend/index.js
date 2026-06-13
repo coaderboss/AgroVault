@@ -443,10 +443,21 @@ app.delete('/api/products/:id', auth, async (req, res) => {
 // 3. ORDERS (BILLING & UDHAAR) APIs
 // ==========================================
 
+// ==========================================
+// 3. ORDERS (BILLING & UDHAAR) APIs
+// ==========================================
+
 app.post('/api/orders', auth, async (req, res) => {
   try {
     const { customerId, items, paidAmount } = req.body;
-    let totalAmount = items.reduce((acc, item) => acc + (item.qty * item.priceAtSale), 0);
+    
+    // 🚨 BUG FIX: Total amount always 'Entered Qty × Entered Price' se niklega
+    let totalAmount = items.reduce((acc, item) => {
+      const itemTotal = (item.enteredQty && item.enteredPrice) 
+        ? (item.enteredQty * item.enteredPrice) 
+        : (item.qty * item.priceAtSale);
+      return acc + itemTotal;
+    }, 0);
 
     let status = "PAID";
     if (paidAmount === 0) status = "UDHAAR";
@@ -754,7 +765,14 @@ app.post('/api/suppliers/:id/pay', auth, async (req, res) => {
 app.post('/api/purchases', auth, async (req, res) => {
   try {
     const { supplierId, items, paidAmount } = req.body;
-    let totalAmount = items.reduce((acc, item) => acc + (item.qty * item.buyPrice), 0);
+    
+    // 🚨 BUG FIX: Purchases ka total bhi 'Entered Qty × Entered Price' se niklega
+    let totalAmount = items.reduce((acc, item) => {
+      const itemTotal = (item.enteredQty && item.enteredPrice) 
+        ? (item.enteredQty * item.enteredPrice) 
+        : (item.qty * item.buyPrice);
+      return acc + itemTotal;
+    }, 0);
 
     let status = "PAID";
     if (Number(paidAmount) === 0) status = "UDHAAR";

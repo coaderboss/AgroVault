@@ -137,15 +137,19 @@ export default function PointOfSale() {
       const orderPayload = {
         customerId: selectedCustomer,
         paidAmount: Number(paidAmount) || 0,
-        items: cart.map(item => ({
-          productId: item.id,
-          qty: item.qty, // Base DB Qty
-          priceAtSale: item.priceAtSale, 
-          enteredQty: item.enteredQty,   
-          enteredUnit: item.enteredUnit,
-          // Custom Label API me bhej sakte hain agar backend update ho, 
-          // filhal frontend parchi ke liye use kar rahe hain
-        }))
+        items: cart.map(item => {
+          const multiplier = item.enteredQty > 0 ? (item.qty / item.enteredQty) : 1;
+          const trueBasePrice = item.priceAtSale / multiplier;
+
+          return {
+            productId: item.id,
+            qty: item.qty,               
+            priceAtSale: trueBasePrice,  
+            enteredQty: item.enteredQty, 
+            enteredUnit: item.enteredUnit,
+            enteredPrice: item.priceAtSale 
+          };
+        })
       };
 
       const res = await axios.post("https://agrovault.onrender.com/api/orders", orderPayload, {
