@@ -160,48 +160,55 @@ export default function SupplierPassbook() {
         </div>
       </div>
 
-      {/* ─── FINANCIAL METRICS ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-        <div className="bg-white p-5 md:p-6 rounded-2xl md:rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden group">
-          <div className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 relative z-10">Net Payable (Due)</div>
-          <div className={`text-3xl md:text-4xl font-black relative z-10 ${currentDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+     {/* ─── FINANCIAL METRICS (COMPACT DESIGN) ─── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+        
+        {/* Net Payable Card (Full width on mobile, 1 column on PC) */}
+        <div className="col-span-2 md:col-span-1 bg-white p-4 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden group">
+          <div className="text-[9px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1 relative z-10">Net Payable (Due)</div>
+          <div className={`text-2xl md:text-4xl font-black relative z-10 ${currentDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
             ₹{currentDue.toLocaleString('en-IN')}
           </div>
-          <Wallet size={80} className={`absolute -bottom-4 -right-4 opacity-[0.03] md:w-[100px] md:h-[100px] ${currentDue > 0 ? 'text-rose-900' : 'text-emerald-900'}`} />
+          <Wallet size={60} className={`absolute -bottom-2 -right-2 opacity-[0.03] md:w-[100px] md:h-[100px] ${currentDue > 0 ? 'text-rose-900' : 'text-emerald-900'}`} />
         </div>
-        <div className="bg-gray-50 p-5 md:p-6 rounded-2xl md:rounded-3xl border border-gray-100 flex flex-col justify-center">
-          <div className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Total Purchases (Cr)</div>
-          <div className="text-xl md:text-2xl font-black text-gray-800">₹{totalBilled.toLocaleString('en-IN')}</div>
+
+        {/* Small Cards (Side-by-Side on mobile) */}
+        <div className="bg-gray-50 p-3 md:p-6 rounded-2xl border border-gray-100 flex flex-col justify-center">
+          <div className="text-[8px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Purchases (Cr)</div>
+          <div className="text-sm md:text-2xl font-black text-gray-800 truncate">₹{totalBilled.toLocaleString('en-IN')}</div>
         </div>
-        <div className="bg-gray-50 p-5 md:p-6 rounded-2xl md:rounded-3xl border border-gray-100 flex flex-col justify-center">
-          <div className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Total Paid (Dr)</div>
-          <div className="text-xl md:text-2xl font-black text-gray-800">₹{totalPaid.toLocaleString('en-IN')}</div>
+        
+        <div className="bg-gray-50 p-3 md:p-6 rounded-2xl border border-gray-100 flex flex-col justify-center">
+          <div className="text-[8px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Paid (Dr)</div>
+          <div className="text-sm md:text-2xl font-black text-gray-800 truncate">₹{totalPaid.toLocaleString('en-IN')}</div>
         </div>
       </div>
 
-      {/* ─── RECORD PAYMENT ACTION ─── */}
+      {/* ─── RECORD PAYMENT ACTION (COMPACT DESIGN) ─── */}
       {currentDue > 0 && (
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 rounded-3xl p-5 md:p-6 mb-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 rounded-2xl p-4 md:p-6 mb-5 md:mb-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h4 className="font-black text-white flex items-center gap-2 text-lg">
-              <ArrowUpRight size={20} className="text-amber-500"/> Record Payment
+            <h4 className="font-black text-white flex items-center gap-1.5 text-base md:text-lg">
+              <ArrowUpRight size={18} className="text-amber-500"/> Record Payment
             </h4>
-            <p className="text-[11px] md:text-xs text-gray-400 font-bold mt-1 tracking-widest uppercase">Clear outstanding dues from ledger.</p>
+            <p className="text-[9px] md:text-xs text-gray-400 font-bold mt-0.5 tracking-widest uppercase">Clear outstanding dues from ledger.</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <div className="relative flex-1 sm:w-56">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-black text-lg">₹</span>
+          
+          {/* Input and Button on the same line for Mobile */}
+          <div className="flex flex-row gap-2.5 w-full md:w-auto">
+            <div className="relative flex-1 md:w-56">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-black text-sm md:text-lg">₹</span>
               <input 
-                type="number" placeholder="Enter amount..."
+                type="number" placeholder="Amount..."
                 value={payAmount} onChange={(e) => setPayAmount(e.target.value)}
-                className="w-full pl-9 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-xl font-black text-white text-lg outline-none focus:border-amber-500 transition-colors"
+                className="w-full pl-7 pr-3 py-2.5 md:py-3.5 bg-white/10 border border-white/20 rounded-xl font-black text-white text-sm md:text-lg outline-none focus:border-amber-500 transition-colors placeholder-gray-500"
               />
             </div>
             <button 
               onClick={handlePayment} disabled={isProcessing}
-              className="bg-amber-500 hover:bg-amber-400 text-gray-900 font-black px-6 md:px-8 py-3.5 rounded-xl shadow-lg shadow-amber-500/20 transition-all active:scale-95 flex justify-center items-center gap-2 whitespace-nowrap disabled:opacity-70 text-sm tracking-widest uppercase"
+              className="bg-amber-500 hover:bg-amber-400 text-gray-900 font-black px-4 md:px-8 py-2.5 md:py-3.5 rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center gap-1.5 whitespace-nowrap disabled:opacity-70 text-[10px] md:text-sm tracking-widest uppercase shrink-0"
             >
-              {isProcessing ? "Processing..." : "Settle Amount"}
+              {isProcessing ? "Wait..." : "Settle"}
             </button>
           </div>
         </div>
@@ -277,9 +284,9 @@ export default function SupplierPassbook() {
           </div>
         )}
 
-        {/* TAB 2: PURCHASE INVOICES (WITH RICH ITEMS LIST) */}
+        {/* TAB 2: PURCHASE INVOICES (COMPACT & HORIZONTAL SCROLL) */}
         {activeTab === "purchases" && (
-          <div className="p-4 md:p-6 space-y-5 bg-gray-50/30">
+          <div className="p-3 md:p-6 space-y-4 md:space-y-5 bg-gray-50/30">
             {supplier.purchases.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-gray-300">
                 <ShoppingCart size={48} strokeWidth={1} className="mb-4 opacity-50"/>
@@ -288,79 +295,82 @@ export default function SupplierPassbook() {
             )}
             
             {supplier.purchases.map((bill) => (
-              <div key={bill.id} className="bg-white p-5 md:p-6 rounded-[2rem] border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col">
+              <div key={bill.id} className="bg-white p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col">
                 
-                {/* ─── INVOICE HEADER & DELETE BUTTON ─── */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5 border-b border-gray-100 pb-5">
-                  <div className="flex items-start gap-4 w-full md:w-auto">
-                    <div className="w-12 h-12 bg-amber-50 border border-amber-100 text-amber-600 rounded-xl flex items-center justify-center shadow-sm shrink-0 mt-1 md:mt-0">
-                      <ReceiptText size={20} />
+               {/* ─── COMPACT INVOICE HEADER ─── */}
+                <div className="flex flex-wrap sm:flex-nowrap justify-between items-start gap-x-2 gap-y-3 mb-4 border-b border-gray-100 pb-3">
+                  
+                  {/* Left Side: Invoice Details */}
+                  <div className="flex items-start gap-2.5 flex-1 min-w-[55%]">
+                    <div className="w-8 h-8 md:w-12 md:h-12 bg-amber-50 border border-amber-100 text-amber-600 rounded-lg md:rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                      <ReceiptText size={16} className="md:w-5 md:h-5" />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-3 mb-1">
-                        <h3 className="font-black text-gray-900 text-lg">Invoice #{bill.id.slice(-6).toUpperCase()}</h3>
-                        
-                        {/* THE PROPERLY ALIGNED DELETE BUTTON */}
-                        <button 
-                          onClick={() => setDeleteModal({ show: true, billId: bill.id })}
-                          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-colors border border-rose-100 flex items-center gap-1.5 shadow-sm active:scale-95"
-                          title="Delete Invoice"
-                        >
-                          <Trash2 size={14} /> <span className="text-[10px] font-black uppercase tracking-widest">Delete</span>
-                        </button>
-                      </div>
-                      
-                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                         Date: {new Date(bill.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}
+                    <div className="overflow-hidden w-full">
+                      <h3 className="font-black text-gray-900 text-sm md:text-lg truncate">Invoice #{bill.id.slice(-6).toUpperCase()}</h3>
+                      <div className="text-[8px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 truncate">
+                         {new Date(bill.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'})}
                       </div>
                     </div>
                   </div>
 
-                  <div className="w-full md:w-auto bg-gray-50 md:bg-transparent p-3 md:p-0 rounded-xl border border-gray-100 md:border-none md:text-right">
-                    <div className="font-black text-2xl text-gray-900">₹{bill.totalAmount.toLocaleString('en-IN')}</div>
-                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
-                      Paid at source: <span className="text-emerald-600">₹{bill.paidAmount.toLocaleString('en-IN')}</span>
+                  {/* Right Side: Total Amount (Ab sirf ek hi baar aayega) */}
+                  <div className="text-right shrink-0 ml-auto mt-0.5 sm:mt-0">
+                    <div className="font-black text-base md:text-2xl text-gray-900">₹{bill.totalAmount.toLocaleString('en-IN')}</div>
+                    <div className="text-[8px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest mt-0.5">
+                      Paid: <span className="text-emerald-600">₹{bill.paidAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
+                  
                 </div>
 
-                {/* ─── REAL ITEMS DETAIL (Direct From Database) ─── */}
-                <div>
-                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <Package size={14} /> Items Purchased
+                {/* ─── HORIZONTAL SCROLL ITEMS ─── */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <Package size={12} className="md:w-[14px] md:h-[14px]" /> Items Purchased
                   </div>
-                  <div className="space-y-3">
-                    {bill.items && bill.items.map(item => {
-                      const baseName = item.product ? item.product.name : 'Unknown Product';
-                      const prodName = item.customLabel || baseName; // Ab custom label dikhega
-                      const baseUnitText = item.product?.unit || "Unit";
-                      
-                      const displayUnit = item.enteredUnit && item.enteredUnit !== "Base" ? item.enteredUnit : baseUnitText;
-                      const displayRate = item.enteredPrice || item.buyPrice;
-                      const displayQty = item.enteredQty || item.qty;
-                      
-                      const itemTotal = item.enteredPrice ? (item.enteredQty * item.enteredPrice) : (item.qty * item.buyPrice);
-                      const showSubtext = item.enteredUnit && item.enteredUnit !== "Base" && item.enteredUnit !== "KG" && item.enteredUnit !== "Gram" && item.enteredUnit !== "Ltr" && item.enteredUnit !== "ml";
+                  {/* COMPACT DELETE BUTTON */}
+                  <button 
+                    onClick={() => setDeleteModal({ show: true, billId: bill.id })}
+                    className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-colors border border-rose-100 flex items-center gap-1 shadow-sm active:scale-95"
+                    title="Delete Invoice"
+                  >
+                    <Trash2 size={12} /> <span className="text-[9px] font-black uppercase tracking-widest">Delete</span>
+                  </button>
+                </div>
 
-                      return (
-                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-300 transition-colors">
-                          <div>
-                            <div className="font-black text-sm text-gray-900">{prodName}</div>
-                            {item.customLabel && <div className="text-[9px] text-gray-400 uppercase tracking-widest mt-0.5">Base: {baseName}</div>}
-                            <div className="text-[10px] font-bold text-gray-500 mt-1.5 flex flex-wrap items-center gap-2 uppercase tracking-widest">                               <span className="bg-white px-2 py-1 rounded-md border border-gray-200 text-amber-700 font-black shadow-sm">
-                                 {displayQty} {displayUnit}
-                               </span>
-                               {showSubtext && <span>(Total {item.qty} {baseUnitText})</span>}
-                            </div>
-                          </div>
-                          <div className="text-left sm:text-right">
-                            <div className="font-black text-lg text-gray-900">₹{itemTotal.toLocaleString('en-IN')}</div>
-                            <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Rate: ₹{displayRate.toLocaleString('en-IN')}/{displayUnit}</div>
+                <div className="flex overflow-x-auto gap-2.5 pb-2 pt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  {bill.items && bill.items.map(item => {
+                    const baseName = item.product ? item.product.name : 'Unknown Product';
+                    const prodName = item.customLabel || baseName;
+                    const baseUnitText = item.product?.unit || "Unit";
+                    
+                    const displayUnit = item.enteredUnit && item.enteredUnit !== "Base" ? item.enteredUnit : baseUnitText;
+                    const displayRate = item.enteredPrice || item.buyPrice;
+                    const displayQty = item.enteredQty || item.qty;
+                    
+                    const itemTotal = item.enteredPrice ? (item.enteredQty * item.enteredPrice) : (item.qty * item.buyPrice);
+                    const showSubtext = item.enteredUnit && item.enteredUnit !== "Base" && item.enteredUnit !== "KG" && item.enteredUnit !== "Gram" && item.enteredUnit !== "Ltr" && item.enteredUnit !== "ml";
+
+                    return (
+                      <div key={item.id} className="bg-gray-50 border border-gray-100 rounded-xl p-3 shrink-0 min-w-[140px] max-w-[180px] flex flex-col justify-between">
+                        <div>
+                          <div className="font-black text-xs text-gray-900 truncate" title={prodName}>{prodName}</div>
+                          {item.customLabel && <div className="text-[8px] text-gray-400 uppercase tracking-widest mt-0.5 truncate">Base: {baseName}</div>}
+                          
+                          <div className="text-[9px] font-bold text-gray-500 mt-1.5 flex flex-wrap items-center gap-1 uppercase tracking-widest">
+                             <span className="bg-white px-1.5 py-0.5 rounded border border-gray-200 text-amber-700 font-black shadow-sm">
+                               {displayQty} {displayUnit}
+                             </span>
+                             {showSubtext && <span className="text-[8px]">(Total {item.qty}{baseUnitText})</span>}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="mt-3 text-right">
+                          <div className="font-black text-sm text-gray-900">₹{itemTotal.toLocaleString('en-IN')}</div>
+                          <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">@ ₹{displayRate.toLocaleString('en-IN')}/{displayUnit}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
               </div>
