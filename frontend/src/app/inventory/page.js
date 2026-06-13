@@ -4,12 +4,13 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { 
   Search, Plus, Package, ArrowLeft, ArrowRight, 
-  MoreVertical, X, Check, Box, Layers, Tag, AlertTriangle, CheckCircle2, Trash2
+  MoreVertical, X, Check, Box, Layers, Tag, AlertTriangle, CheckCircle2, Trash2, ChevronDown
 } from "lucide-react";
 
 export default function Inventory() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false); // Naya state: Load More button ke liye
   
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,11 +36,9 @@ export default function Inventory() {
   const [newProduct, setNewProduct] = useState(baseProductState);
   const [editingProduct, setEditingProduct] = useState(null);
   
-  // ─── NAYE STATES (Modal aur Delete ke liye) ───
   const [viewingProduct, setViewingProduct] = useState(null); 
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // ─── PREMIUM ALERTS & CONFIRM MODALS ───
   const [localAlert, setLocalAlert] = useState({ show: false, type: "", message: "" });
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
   const [bulkCalc, setBulkCalc] = useState({ active: false, outerCount: "", innerCount: "" });
@@ -62,10 +61,12 @@ export default function Inventory() {
       await axios.delete(`https://agrovault.onrender.com/api/products/${deleteConfirm.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchInventory(currentPage);
+      // Delete hone par shuru se load karo
+      setProducts([]); 
+      setCurrentPage(1);
+      fetchInventory(1, false); 
       showLocalAlert("success", "Item inventory se hamesha ke liye delete ho gaya!");
     } catch (error) {
-      // Backend se jo message aayega, wahi screen par laal patti mein dikhega
       const errorMsg = error.response?.data?.message || "Item delete karne mein error aaya!";
       showLocalAlert("error", errorMsg);
     } finally {
@@ -74,7 +75,7 @@ export default function Inventory() {
     }
   };
 
-  // ─── BULK PACKET ENGINE (Bori * Packets) ───
+  // ─── BULK PACKET ENGINE ───
   useEffect(() => {
     if (bulkCalc.active && bulkCalc.outerCount && bulkCalc.innerCount) {
         const totalPacks = Number(bulkCalc.outerCount) * Number(bulkCalc.innerCount);
@@ -83,12 +84,11 @@ export default function Inventory() {
     }
   }, [bulkCalc.outerCount, bulkCalc.innerCount, bulkCalc.active, isModalOpen, editModalOpen]);
 
-  // ─── BUG FIX: INITIAL FETCH HOOK ───
+  // ─── INITIAL LOAD ───
   useEffect(() => {
-    fetchInventory(currentPage);
-  }, [currentPage]);
+    fetchInventory(1, false);
+  }, []);
 
-  // ─── THE MATH ENGINE ───
   const calculatePackagedMath = (stateObj, setStateFunc) => {
     if (stateObj.measureType === "packaged" && stateObj.qtyPerPackage > 0) {
       setStateFunc(prev => ({
@@ -107,28 +107,41 @@ export default function Inventory() {
     if (editingProduct) calculatePackagedMath(editingProduct, setEditingProduct);
   }, [editingProduct?.packBuyPrice, editingProduct?.packSellPrice, editingProduct?.packStock, editingProduct?.qtyPerPackage, editingProduct?.measureType]);
 
-  const fetchInventory = async (page) => {
-    setLoading(true);
+  // ─── UPDATED FETCH INVENTORY (Load More Logic) ───
+  const fetchInventory = async (page, isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
+
     try {
       const token = Cookies.get("auth_token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
+      // Yahan api/products wale endpoint par call jayegi
       const res = await axios.get(`https://agrovault.onrender.com/api/products?page=${page}&limit=${limit}`, config);
-      setProducts(res.data.data);
+      
+      if (isLoadMore) {
+        // Agar load more kiya hai, toh purane data mein naya data jod do
+        setProducts(prev => [...prev, ...res.data.data]);
+      } else {
+        // Agar pehli baar load ho raha hai, toh seedha data daal do
+        setProducts(res.data.data);
+      }
+
       setTotalPages(res.data.pagination.totalPages);
       setTotalItems(res.data.pagination.totalItems);
+      setCurrentPage(page);
     } catch (error) {
       console.error("Fetch error", error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  // Naya function Load More button ke liye
+  const handleLoadMore = () => {
+    if (currentPage < totalPages) {
+      fetchInventory(currentPage + 1, true);
+    }
   };
 
   const handleAddProduct = async (e) => {
@@ -153,7 +166,9 @@ export default function Inventory() {
       };
 
       await axios.post("https://agrovault.onrender.com/api/products", payload, config);
-      setIsModalOpen(false); setNewProduct(baseProductState); fetchInventory(1); setCurrentPage(1);
+      setIsModalOpen(false); setNewProduct(baseProductState); 
+      setProducts([]); // List khali karo
+      fetchInventory(1, false); // Naya item aane par shuru se load karo
       showLocalAlert("success", "Item successfully added to inventory!");
     } catch (error) {
       showLocalAlert("error", "Error adding item!");
@@ -182,7 +197,10 @@ export default function Inventory() {
       };
 
       await axios.put(`https://agrovault.onrender.com/api/products/${editingProduct.id}`, payload, config);
-      setEditModalOpen(false); setEditingProduct(null); fetchInventory(currentPage); 
+      setEditModalOpen(false); setEditingProduct(null); 
+      // Update hone par shuru se data magwao taaki galti na ho
+      setProducts([]);
+      fetchInventory(1, false); 
       showLocalAlert("success", "Inventory item updated successfully!");
     } catch (error) {
       showLocalAlert("error", "Error updating item!");
@@ -194,7 +212,8 @@ export default function Inventory() {
   const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="animate-in fade-in duration-500 pb-24 lg:pb-6 relative max-w-7xl mx-auto px-2 sm:px-4 md:px-6">
+    <div className="animate-in fade-in duration-500 pb-24 lg:pb-6 relative max-w-7xl mx-auto px-0 sm:px-4 md:px-6"> 
+      {/* px-0 on mobile taaki edge-to-edge list bane */}
       
       {/* ─── PREMIUM LOCAL ALERT BANNER ─── */}
       <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-[300] transition-all duration-500 ease-in-out transform w-11/12 md:w-auto min-w-[300px] ${localAlert.show ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`}>
@@ -207,44 +226,45 @@ export default function Inventory() {
         </div>
       </div>
       
-      {/* ─── HEADER COMMAND CENTER ─── */}
-      <div className="bg-white rounded-[2rem] p-5 md:p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      {/* ─── HEADER COMMAND CENTER (COMPACT EDGE-TO-EDGE) ─── */}
+      <div className="bg-white p-3 md:p-5 shadow-sm border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-3 sticky top-0 z-20">
         <div>
-          <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-            <Layers className="text-indigo-600" size={28}/> Master Inventory
+          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5">
+            <Layers className="text-indigo-600" size={22}/> My Godown
           </h1>
-          <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-widest">Manage your warehouse stock and pricing</p>
+          {/* Subtitle hidden on phone to save space */}
+          <p className="hidden md:block text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-widest">Manage your warehouse stock and pricing</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-72">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative flex-1 md:w-72">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input 
-              type="text" placeholder="Search by name..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-500 transition-all shadow-inner"
+              type="text" placeholder="Search items..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-500 transition-all"
             />
           </div>
-          <button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl text-sm font-black shadow-lg shadow-indigo-600/20 transition-all active:scale-95">
-            <Plus size={18} /> Add Item
+          <button onClick={() => setIsModalOpen(true)} className="shrink-0 flex justify-center items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-black shadow-md shadow-indigo-600/20 active:scale-95 transition-all">
+            <Plus size={18} /> <span className="hidden sm:inline">Add Item</span><span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
 
-      {/* ─── INVENTORY LIST ─── */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col mb-6">
-        {loading ? (
+      {/* ─── INVENTORY LIST (Edge-to-Edge Design) ─── */}
+      <div className="bg-white sm:rounded-[2rem] border-x-0 sm:border border-gray-100 shadow-none sm:shadow-sm overflow-hidden flex flex-col mb-6">
+        {loading && products.length === 0 ? (
           <div className="flex justify-center items-center h-64">
             <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-400">
             <Box size={48} className="mb-4 opacity-50" strokeWidth={1.5} />
-            <p className="font-black text-lg text-gray-600">Inventory Empty</p>
+            <p className="font-black text-lg text-gray-600">Godown Empty</p>
           </div>
         ) : (
           <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <table className="w-full text-left min-w-[800px] md:min-w-full">
-              <thead className="bg-gray-50/80 border-b border-gray-100">
+              <thead className="bg-white border-b border-gray-200 sticky top-0 z-10 hidden sm:table-header-group">
                 <tr>
                   <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Product Details</th>
                   <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">Current Stock</th>
@@ -252,48 +272,48 @@ export default function Inventory() {
                   <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest text-center whitespace-nowrap">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-100/50">
                 {filteredProducts.map((product) => {
                   const totalBags = product.isPackaged ? Math.floor(product.stockQty / product.qtyPerPackage) : 0;
                   const isLowStock = product.stockQty < 20;
 
                   return (
-                    <tr key={product.id} className="hover:bg-indigo-50/30 transition-colors group cursor-pointer" onClick={(e) => {
+                    <tr key={product.id} className="bg-white even:bg-indigo-50/40 hover:bg-indigo-50 transition-colors group cursor-pointer" onClick={(e) => {
                       if (!e.target.closest('.action-btn')) {
                         setViewingProduct(product);
                       }
                     }}>
                       
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shrink-0">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white shadow-sm border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
                             <Package size={20} strokeWidth={2.5}/>
                           </div>
                           <div>
-                            <div className="font-black text-sm text-gray-900 leading-tight">{product.name}</div>
+                            <div className="font-black text-sm sm:text-base text-gray-900 leading-tight">{product.name}</div>
                             <div className="text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-widest">{product.brand || 'No Brand'} • {product.category}</div>
                           </div>
                         </div>
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
                         {product.isPackaged ? (
                            <div className="flex flex-col items-center justify-center gap-1.5">
-                             <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black shadow-sm ${isLowStock ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'}`}>
+                             <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black shadow-sm ${isLowStock ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-white text-indigo-700 border border-indigo-200'}`}>
                                {totalBags} {product.packageUnit}s
                              </span>
-                             <span className="text-[10px] font-black text-gray-500 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                             <span className="text-[10px] font-black text-gray-500">
                                Total: {product.stockQty} {product.unit}
                              </span>
                            </div>
                         ) : (
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black border ${isLowStock ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black shadow-sm ${isLowStock ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-white text-emerald-700 border border-emerald-200'}`}>
                             {product.stockQty} {product.unit} LEFT
                           </span>
                         )}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right">
                         {product.isPackaged ? (
                           <>
                            <div className="font-black text-base text-gray-900">₹{product.sellPrice * product.qtyPerPackage} <span className="text-[10px] text-gray-400 font-bold uppercase">/1 {product.packageUnit}</span></div>
@@ -307,16 +327,16 @@ export default function Inventory() {
                         )}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-center relative action-btn">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center relative action-btn">
                         <button 
                           onClick={() => setActiveDropdown(activeDropdown === product.id ? null : product.id)}
-                          className="text-gray-400 hover:text-indigo-600 transition-colors p-2 rounded-xl hover:bg-indigo-50 inline-flex items-center justify-center"
+                          className="text-gray-400 hover:text-indigo-600 transition-colors p-2 rounded-xl hover:bg-white inline-flex items-center justify-center shadow-sm border border-transparent hover:border-gray-200"
                         >
                           <MoreVertical size={20} />
                         </button>
                         
                         {activeDropdown === product.id && (
-                          <div className="absolute right-16 top-10 w-32 bg-white rounded-xl shadow-xl z-50 overflow-hidden border border-gray-200 py-1">
+                          <div className="absolute right-6 sm:right-16 top-10 w-32 bg-white rounded-xl shadow-xl z-50 overflow-hidden border border-gray-200 py-1">
                             <button 
                               onClick={() => {
                                 let initialCompany = "";
@@ -366,22 +386,33 @@ export default function Inventory() {
           </div>
         )}
 
-        {/* ─── PAGINATION CONTROLS ─── */}
-        {!loading && products.length > 0 && (
-          <div className="border-t border-gray-100 p-4 flex items-center justify-between bg-gray-50/50">
-            <div className="text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest">
-              Viewing <span className="text-indigo-600">{(currentPage - 1) * limit + 1}</span> to <span className="text-indigo-600">{Math.min(currentPage * limit, totalItems)}</span> of {totalItems}
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={handlePrevPage} disabled={currentPage === 1} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-all shadow-sm active:scale-95"><ArrowLeft size={16} /></button>
-              <div className="hidden md:block text-xs font-black text-gray-800 px-3 py-2 bg-white border border-gray-200 rounded-xl shadow-sm">Page {currentPage} of {totalPages}</div>
-              <button onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-all shadow-sm active:scale-95"><ArrowRight size={16} /></button>
-            </div>
-          </div>
+        {/* ─── LOAD MORE BUTTON ─── */}
+        {!loading && products.length > 0 && currentPage < totalPages && !searchQuery && (
+           <div className="p-4 flex justify-center bg-white sm:bg-transparent">
+             <button 
+               onClick={handleLoadMore} 
+               disabled={loadingMore}
+               className="w-full sm:w-auto px-6 py-3 bg-white border border-gray-200 text-gray-700 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gray-50 shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95"
+             >
+               {loadingMore ? (
+                 <><div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div> Loading...</>
+               ) : (
+                 <><ChevronDown size={16} /> Load More Items</>
+               )}
+             </button>
+           </div>
         )}
+
+        {/* ─── END OF LIST MESSAGE ─── */}
+        {!loading && products.length > 0 && currentPage >= totalPages && !searchQuery && (
+            <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white sm:bg-transparent">
+               • You have reached the end of your Godown •
+            </div>
+        )}
+
       </div>
 
-      {/* ─── ADD/EDIT PRODUCT MODAL COMPONENT ─── */}
+      {/* ─── ADD/EDIT PRODUCT MODAL COMPONENT (Baki code same rahega) ─── */}
       {(isModalOpen || editModalOpen) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-gray-900/70 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
@@ -389,7 +420,7 @@ export default function Inventory() {
             <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-indigo-50 shrink-0">
               <h3 className="font-black text-gray-900 text-lg flex items-center gap-2 uppercase tracking-widest">
                 <Package size={20} className="text-indigo-600" /> 
-                {isModalOpen ? 'New Inventory Item' : 'Update Stock Details'}
+                {isModalOpen ? 'New Godown Item' : 'Update Stock Details'}
               </h3>
               <button onClick={() => { setIsModalOpen(false); setEditModalOpen(false); setEditingProduct(null); setBulkCalc({active: false, outerCount: "", innerCount: ""}); }} className="text-gray-500 hover:bg-white p-2 rounded-full transition-colors shadow-sm">
                 <X size={18} />
@@ -527,7 +558,7 @@ export default function Inventory() {
         </div>
       )}
        
-       {/* ─── PRODUCT DETAILS (X-RAY) MODAL ─── */}
+       {/* ─── PRODUCT DETAILS (X-RAY) MODAL (Baki code same rahega) ─── */}
       {viewingProduct && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setViewingProduct(null)}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
@@ -616,7 +647,7 @@ export default function Inventory() {
         </div>
       )}
 
-      {/* ─── DANGER: DELETE CONFIRMATION MODAL ─── */}
+      {/* ─── DANGER: DELETE CONFIRMATION MODAL (Baki code same rahega) ─── */}
       {deleteConfirm.show && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 p-6 text-center">
